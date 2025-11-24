@@ -902,6 +902,212 @@
 
                     <div id="asociaciones-list"></div>
                 </div>  
+
+
+
+                <!-- SECCIÓN EMPLEADOS -->
+                <div id="empleados" class="section">
+                    <h2>Gestión de Empleados</h2>
+                    
+                    <div class="form-container">
+                        <h3 id="empleado-form-title">Agregar Nuevo Empleado</h3>
+                        <form id="empleado-form">
+                            <input type="hidden" id="empleado-id">
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Legajo*</label>
+                                    <input type="text" id="empleado-legajo" placeholder="Ej: EMP-001" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>DNI*</label>
+                                    <input type="text" id="empleado-dni" placeholder="Ej: 12345678" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Nombre*</label>
+                                    <input type="text" id="empleado-nombre" placeholder="Ej: Juan" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Apellido*</label>
+                                    <input type="text" id="empleado-apellido" placeholder="Ej: Pérez" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Fecha de Nacimiento</label>
+                                    <input type="date" id="empleado-fecha-nacimiento">
+                                </div>
+                                <div class="form-group">
+                                    <label>Fecha de Ingreso*</label>
+                                    <input type="date" id="empleado-fecha-ingreso" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Email</label>
+                                    <input type="email" id="empleado-email" placeholder="Ej: juan@empresa.com">
+                                </div>
+                                <div class="form-group">
+                                    <label>Teléfono</label>
+                                    <input type="text" id="empleado-telefono" placeholder="Ej: +54 11 1234-5678">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Dirección</label>
+                                <textarea id="empleado-direccion" rows="2" placeholder="Dirección completa..."></textarea>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Salario Base*</label>
+                                    <input type="number" id="empleado-salario-base" placeholder="0.00" step="0.01" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Convenio</label>
+                                    <select id="empleado-convenio">
+                                        <option value="">Seleccionar convenio...</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn">Guardar Empleado</button>
+                            <button type="button" class="btn btn-danger" onclick="cancelarEdicion('empleado')" style="display:none;" id="empleado-cancelar">Cancelar</button>
+                        </form>
+                    </div>
+
+                    <div id="empleados-list"></div>
+                </div>
+
+                <!-- SECCIÓN CÁLCULO DE LIQUIDACIÓN -->
+                <div id="liquidaciones" class="section">
+                    <h2>Cálculo de Liquidaciones</h2>
+                    
+                    <div class="form-container">
+                        <h3>Calcular Liquidación</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Seleccionar Empleado*</label>
+                                <select id="liquidacion-empleado">
+                                    <option value="">Cargando empleados...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Período*</label>
+                                <input type="month" id="liquidacion-periodo" required>
+                            </div>
+                        </div>
+                        <button type="button" class="btn" onclick="calcularLiquidacion()">Calcular Liquidación</button>
+                        <button type="button" class="btn" onclick="guardarLiquidacion()" style="display:none;" id="btn-guardar-liquidacion">Guardar Liquidación</button>
+                    </div>
+
+                    <div id="resultado-liquidacion" style="display: none;">
+                        <div class="form-container">
+                            <h3>Resultado del Cálculo</h3>
+                            <div id="detalle-liquidacion"></div>
+                        </div>
+                    </div>
+
+                    <!-- Formularios para agregar conceptos -->
+                    <div class="form-row">
+                        <div class="form-container">
+                            <h4>Agregar Horas Extras</h4>
+                            <form id="hora-extra-form">
+                                <input type="hidden" id="hora-extra-empleado-id">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Tipo de Hora Extra</label>
+                                        <select id="hora-extra-tipo">
+                                            <option value="">Cargando tipos...</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Cantidad (horas)</label>
+                                        <input type="number" id="hora-extra-cantidad" step="0.5" min="0.5" value="1">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Fecha</label>
+                                        <input type="date" id="hora-extra-fecha">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Descripción</label>
+                                        <input type="text" id="hora-extra-descripcion" placeholder="Descripción opcional">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn">Agregar Hora Extra</button>
+                            </form>
+                        </div>
+
+                        <div class="form-container">
+                            <h4>Agregar Adicional</h4>
+                            <form id="adicional-empleado-form">
+                                <input type="hidden" id="adicional-empleado-id">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Adicional</label>
+                                        <select id="adicional-empleado-tipo">
+                                            <option value="">Cargando adicionales...</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Monto</label>
+                                        <input type="number" id="adicional-empleado-monto" step="0.01" min="0">
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Fecha</label>
+                                        <input type="date" id="adicional-empleado-fecha">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Descripción</label>
+                                        <input type="text" id="adicional-empleado-descripcion" placeholder="Descripción del adicional">
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn">Agregar Adicional</button>
+                            </form>
+                        </div>
+                    </div>
+
+                    <div class="form-container">
+                        <h4>Agregar Descuento</h4>
+                        <form id="descuento-empleado-form">
+                            <input type="hidden" id="descuento-empleado-id">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Descuento</label>
+                                    <select id="descuento-empleado-tipo">
+                                        <option value="">Cargando descuentos...</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Monto</label>
+                                    <input type="number" id="descuento-empleado-monto" step="0.01" min="0">
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Fecha</label>
+                                    <input type="date" id="descuento-empleado-fecha">
+                                </div>
+                                <div class="form-group">
+                                    <label>Descripción</label>
+                                    <input type="text" id="descuento-empleado-descripcion" placeholder="Descripción del descuento">
+                                </div>
+                            </div>
+                            <button type="submit" class="btn">Agregar Descuento</button>
+                        </form>
+                    </div>
+                </div>
+
+                
             </div>
         </div>
     </div>
@@ -2029,6 +2235,497 @@ function showOperationResult(operation, success, customMessage = null) {
             cargarLicencias();
             cargarDatosAsociaciones();
         });
+
+
+
+        
+
+
+
+
+////////////////////////////////////////////////////////////// 
+// ENTREGA NRO 3: LÓGICA DE CÁLCULO PARA EMPLEADO DE PRUEBA //
+//////////////////////////////////////////////////////////////
+
+// ============================================
+// EMPLEADOS
+// ============================================
+
+        async function cargarEmpleados() {
+            const container = document.getElementById('empleados-list');
+            container.innerHTML = '<div class="loading">Cargando empleados...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/empleados`);
+                const empleados = await response.json();
+
+                if (empleados.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>No hay empleados registrados</p></div>';
+                    return;
+                }
+
+                let html = '<table><thead><tr><th>Legajo</th><th>Nombre</th><th>DNI</th><th>Salario Base</th><th>Convenio</th><th>Acciones</th></tr></thead><tbody>';
+                
+                empleados.forEach(e => {
+                    html += `
+                        <tr>
+                            <td><strong>${e.legajo}</strong></td>
+                            <td>${e.apellido}, ${e.nombre}</td>
+                            <td>${e.dni}</td>
+                            <td>$${parseFloat(e.salario_base).toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                            <td>${e.convenio_nombre || 'Sin convenio'}</td>
+                            <td>
+                                <button class="btn btn-edit" onclick="editarEmpleado(${e.id})">Editar</button>
+                                <button class="btn btn-danger" style="padding: 8px 16px; font-size: 12px;" onclick="eliminarEmpleado(${e.id})">Eliminar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+                showOperationResult('load', true, 'Empleados cargados correctamente');
+            } catch (error) {
+                container.innerHTML = '<div class="alert alert-error">Error al cargar empleados</div>';
+                console.error('Error:', error);
+                showOperationResult('load', false, 'Error al cargar empleados');
+            }
+        }
+
+        async function cargarDatosFormularios() {
+            try {
+                const response = await fetch(`${API_URL}/datos-formularios`);
+                const datos = await response.json();
+
+                // Cargar convenios en formulario de empleados
+                const selectConvenio = document.getElementById('empleado-convenio');
+                selectConvenio.innerHTML = '<option value="">Seleccionar convenio...</option>';
+                datos.convenios.forEach(c => {
+                    selectConvenio.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
+                });
+
+                // Cargar empleados para liquidación
+                const selectLiquidacionEmpleado = document.getElementById('liquidacion-empleado');
+                selectLiquidacionEmpleado.innerHTML = '<option value="">Seleccionar empleado...</option>';
+                const empleados = await fetch(`${API_URL}/empleados`).then(r => r.json());
+                empleados.forEach(e => {
+                    selectLiquidacionEmpleado.innerHTML += `<option value="${e.id}">${e.legajo} - ${e.apellido}, ${e.nombre}</option>`;
+                });
+
+                // Cargar tipos de horas extras
+                const selectHoraExtra = document.getElementById('hora-extra-tipo');
+                selectHoraExtra.innerHTML = '<option value="">Seleccionar tipo...</option>';
+                datos.horasExtras.forEach(h => {
+                    selectHoraExtra.innerHTML += `<option value="${h.id}">${h.nombre} (${h.multiplicador}x)</option>`;
+                });
+
+                // Cargar adicionales
+                const selectAdicional = document.getElementById('adicional-empleado-tipo');
+                selectAdicional.innerHTML = '<option value="">Seleccionar adicional...</option>';
+                datos.adicionales.forEach(a => {
+                    selectAdicional.innerHTML += `<option value="${a.id}">${a.nombre}</option>`;
+                });
+
+                // Cargar descuentos
+                const selectDescuento = document.getElementById('descuento-empleado-tipo');
+                selectDescuento.innerHTML = '<option value="">Seleccionar descuento...</option>';
+                datos.descuentos.forEach(d => {
+                    selectDescuento.innerHTML += `<option value="${d.id}">${d.nombre}</option>`;
+                });
+
+            } catch (error) {
+                console.error('Error al cargar datos para formularios:', error);
+            }
+        }
+
+        document.getElementById('empleado-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('empleado-id').value;
+            const data = {
+                legajo: document.getElementById('empleado-legajo').value,
+                nombre: document.getElementById('empleado-nombre').value,
+                apellido: document.getElementById('empleado-apellido').value,
+                dni: document.getElementById('empleado-dni').value,
+                fecha_nacimiento: document.getElementById('empleado-fecha-nacimiento').value || null,
+                fecha_ingreso: document.getElementById('empleado-fecha-ingreso').value,
+                email: document.getElementById('empleado-email').value || null,
+                telefono: document.getElementById('empleado-telefono').value || null,
+                direccion: document.getElementById('empleado-direccion').value || null,
+                salario_base: parseFloat(document.getElementById('empleado-salario-base').value),
+                convenio_id: document.getElementById('empleado-convenio').value || null
+            };
+
+            try {
+                const url = id ? `${API_URL}/empleados/${id}` : `${API_URL}/empleados`;
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    this.reset();
+                    document.getElementById('empleado-id').value = '';
+                    document.getElementById('empleado-cancelar').style.display = 'none';
+                    document.getElementById('empleado-form-title').textContent = 'Agregar Nuevo Empleado';
+                    cargarEmpleados();
+                    cargarDatosFormularios(); // Recargar lista de empleados para liquidación
+                    showOperationResult(id ? 'update' : 'create', true);
+                } else {
+                    const error = await response.json();
+                    showOperationResult(id ? 'update' : 'create', false, error.error);
+                }
+            } catch (error) {
+                showOperationResult(id ? 'update' : 'create', false, 'Error de conexión al servidor');
+            }
+        });
+
+        async function editarEmpleado(id) {
+            try {
+                const response = await fetch(`${API_URL}/empleados/${id}`);
+                const empleado = await response.json();
+                
+                document.getElementById('empleado-id').value = empleado.id;
+                document.getElementById('empleado-legajo').value = empleado.legajo;
+                document.getElementById('empleado-nombre').value = empleado.nombre;
+                document.getElementById('empleado-apellido').value = empleado.apellido;
+                document.getElementById('empleado-dni').value = empleado.dni;
+                document.getElementById('empleado-fecha-nacimiento').value = empleado.fecha_nacimiento || '';
+                document.getElementById('empleado-fecha-ingreso').value = empleado.fecha_ingreso;
+                document.getElementById('empleado-email').value = empleado.email || '';
+                document.getElementById('empleado-telefono').value = empleado.telefono || '';
+                document.getElementById('empleado-direccion').value = empleado.direccion || '';
+                document.getElementById('empleado-salario-base').value = empleado.salario_base;
+                document.getElementById('empleado-convenio').value = empleado.convenio_id || '';
+                
+                document.getElementById('empleado-cancelar').style.display = 'inline-block';
+                document.getElementById('empleado-form-title').textContent = 'Editar Empleado';
+                window.scrollTo(0, 0);
+                showNotification('info', 'Modo Edición', 'Editando empleado: ' + empleado.nombre + ' ' + empleado.apellido);
+            } catch (error) {
+                alert('Error al cargar empleado para editar');
+                console.error('Error:', error);
+            }
+        }
+
+        async function eliminarEmpleado(id) {
+            if (!confirm('¿Estás seguro de eliminar este empleado?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/empleados/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    cargarEmpleados();
+                    cargarDatosFormularios(); // Recargar lista de empleados para liquidación
+                    showOperationResult('delete', true);
+                }
+            } catch (error) {
+                alert('Error al eliminar empleado');
+                console.error('Error:', error);
+            }
+        }
+
+        // ============================================
+        // CÁLCULO DE LIQUIDACIONES
+        // ============================================
+
+        async function calcularLiquidacion() {
+            const empleadoId = document.getElementById('liquidacion-empleado').value;
+            const periodo = document.getElementById('liquidacion-periodo').value;
+
+            if (!empleadoId || !periodo) {
+                showNotification('error', 'Error', 'Por favor seleccione un empleado y un período');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/empleados/${empleadoId}/calcular-liquidacion`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ periodo: periodo })
+                });
+
+                if (response.ok) {
+                    const liquidacion = await response.json();
+                    mostrarResultadoLiquidacion(liquidacion);
+                    
+                    // Mostrar botón para guardar
+                    document.getElementById('btn-guardar-liquidacion').style.display = 'inline-block';
+                    document.getElementById('btn-guardar-liquidacion').onclick = () => guardarLiquidacion(empleadoId, periodo);
+                    
+                } else {
+                    const error = await response.json();
+                    showNotification('error', 'Error', error.error);
+                }
+            } catch (error) {
+                showNotification('error', 'Error', 'Error al calcular liquidación');
+                console.error('Error:', error);
+            }
+        }
+
+        function mostrarResultadoLiquidacion(liquidacion) {
+            const container = document.getElementById('detalle-liquidacion');
+            
+            let html = `
+                <div style="margin-bottom: 20px;">
+                    <h4>Empleado: ${liquidacion.empleado.apellido}, ${liquidacion.empleado.nombre}</h4>
+                    <p><strong>Legajo:</strong> ${liquidacion.empleado.legajo} | <strong>Período:</strong> ${liquidacion.periodo}</p>
+                </div>
+
+                <div class="form-row">
+                    <div class="form-container">
+                        <h4 style="color: #28a745;">💵 Haberes</h4>
+                        <table style="width: 100%;">
+                            <tr>
+                                <td>Salario Base:</td>
+                                <td style="text-align: right;">$${liquidacion.haberes.salario_base.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                            <tr>
+                                <td>Horas Extras:</td>
+                                <td style="text-align: right;">$${liquidacion.haberes.horas_extras.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                            <tr>
+                                <td>Adicionales:</td>
+                                <td style="text-align: right;">$${liquidacion.haberes.adicionales.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                            <tr style="border-top: 2px solid #ddd; font-weight: bold;">
+                                <td>Total Haberes:</td>
+                                <td style="text-align: right;">$${liquidacion.haberes.total.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="form-container">
+                        <h4 style="color: #dc3545;">📉 Descuentos</h4>
+                        <table style="width: 100%;">
+            `;
+            
+            liquidacion.descuentos.detalle.forEach(desc => {
+                html += `
+                    <tr>
+                        <td>${desc.concepto}:</td>
+                        <td style="text-align: right;">$${desc.monto.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                            <tr style="border-top: 2px solid #ddd; font-weight: bold;">
+                                <td>Total Descuentos:</td>
+                                <td style="text-align: right;">$${liquidacion.descuentos.total.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="form-container" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+                    <h3 style="color: white; text-align: center;">
+                        Neto a Pagar: $${liquidacion.neto_a_pagar.toLocaleString('es-AR', {minimumFractionDigits: 2})}
+                    </h3>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+            document.getElementById('resultado-liquidacion').style.display = 'block';
+            
+            // Configurar formularios de conceptos
+            document.getElementById('hora-extra-empleado-id').value = liquidacion.empleado.id;
+            document.getElementById('adicional-empleado-id').value = liquidacion.empleado.id;
+            document.getElementById('descuento-empleado-id').value = liquidacion.empleado.id;
+            
+            // Establecer fecha actual en formularios
+            const hoy = new Date().toISOString().split('T')[0];
+            document.getElementById('hora-extra-fecha').value = hoy;
+            document.getElementById('adicional-empleado-fecha').value = hoy;
+            document.getElementById('descuento-empleado-fecha').value = hoy;
+        }
+
+        async function guardarLiquidacion(empleadoId, periodo) {
+            try {
+                const response = await fetch(`${API_URL}/empleados/${empleadoId}/liquidaciones`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ periodo: periodo })
+                });
+
+                if (response.ok) {
+                    showNotification('success', 'Liquidación Guardada', 'La liquidación se guardó correctamente en el historial');
+                    document.getElementById('btn-guardar-liquidacion').style.display = 'none';
+                } else {
+                    const error = await response.json();
+                    showNotification('error', 'Error', error.error);
+                }
+            } catch (error) {
+                showNotification('error', 'Error', 'Error al guardar liquidación');
+                console.error('Error:', error);
+            }
+        }
+
+        // Formularios para agregar conceptos
+        document.getElementById('hora-extra-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const empleadoId = document.getElementById('hora-extra-empleado-id').value;
+            const data = {
+                tipo_hora_extra_id: document.getElementById('hora-extra-tipo').value,
+                cantidad: parseFloat(document.getElementById('hora-extra-cantidad').value),
+                fecha: document.getElementById('hora-extra-fecha').value,
+                descripcion: document.getElementById('hora-extra-descripcion').value
+            };
+
+            if (!empleadoId) {
+                showNotification('error', 'Error', 'Primero calcule una liquidación para un empleado');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/empleados/${empleadoId}/horas-extras`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    this.reset();
+                    document.getElementById('hora-extra-fecha').value = new Date().toISOString().split('T')[0];
+                    showNotification('success', 'Hora Extra Agregada', 'La hora extra se registró correctamente');
+                } else {
+                    const error = await response.json();
+                    showNotification('error', 'Error', error.error);
+                }
+            } catch (error) {
+                showNotification('error', 'Error', 'Error al registrar hora extra');
+                console.error('Error:', error);
+            }
+        });
+
+        document.getElementById('adicional-empleado-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const empleadoId = document.getElementById('adicional-empleado-id').value;
+            const data = {
+                adicional_id: document.getElementById('adicional-empleado-tipo').value,
+                monto: parseFloat(document.getElementById('adicional-empleado-monto').value),
+                fecha: document.getElementById('adicional-empleado-fecha').value,
+                descripcion: document.getElementById('adicional-empleado-descripcion').value
+            };
+
+            if (!empleadoId) {
+                showNotification('error', 'Error', 'Primero calcule una liquidación para un empleado');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/empleados/${empleadoId}/adicionales`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    this.reset();
+                    document.getElementById('adicional-empleado-fecha').value = new Date().toISOString().split('T')[0];
+                    showNotification('success', 'Adicional Agregado', 'El adicional se registró correctamente');
+                } else {
+                    const error = await response.json();
+                    showNotification('error', 'Error', error.error);
+                }
+            } catch (error) {
+                showNotification('error', 'Error', 'Error al registrar adicional');
+                console.error('Error:', error);
+            }
+        });
+
+        document.getElementById('descuento-empleado-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const empleadoId = document.getElementById('descuento-empleado-id').value;
+            const data = {
+                descuento_id: document.getElementById('descuento-empleado-tipo').value,
+                monto: parseFloat(document.getElementById('descuento-empleado-monto').value),
+                fecha: document.getElementById('descuento-empleado-fecha').value,
+                descripcion: document.getElementById('descuento-empleado-descripcion').value
+            };
+
+            if (!empleadoId) {
+                showNotification('error', 'Error', 'Primero calcule una liquidación para un empleado');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/empleados/${empleadoId}/descuentos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    this.reset();
+                    document.getElementById('descuento-empleado-fecha').value = new Date().toISOString().split('T')[0];
+                    showNotification('success', 'Descuento Agregado', 'El descuento se registró correctamente');
+                } else {
+                    const error = await response.json();
+                    showNotification('error', 'Error', error.error);
+                }
+            } catch (error) {
+                showNotification('error', 'Error', 'Error al registrar descuento');
+                console.error('Error:', error);
+            }
+        });
+
+        // Actualizar la función de cancelar edición
+        function cancelarEdicion(tipo) {
+            if (tipo === 'empleado') {
+                document.getElementById('empleado-form').reset();
+                document.getElementById('empleado-id').value = '';
+                document.getElementById('empleado-cancelar').style.display = 'none';
+                document.getElementById('empleado-form-title').textContent = 'Agregar Nuevo Empleado';
+            } else {
+                // ... resto del código existente para otros tipos
+                document.getElementById(`${tipo}-form`).reset();
+                document.getElementById(`${tipo}-id`).value = '';
+                document.getElementById(`${tipo}-cancelar`).style.display = 'none';
+                document.getElementById(`${tipo}-form-title`).textContent = 
+                    tipo === 'convenio' ? 'Agregar Nuevo Convenio' :
+                    tipo === 'hora' ? 'Agregar Tipo de Hora Extra' :
+                    tipo === 'feriado' ? 'Agregar Feriado' :
+                    tipo === 'adicional' ? 'Agregar Adicional' :
+                    tipo === 'descuento' ? 'Agregar Descuento' :
+                    tipo === 'vacacion' ? 'Agregar Política de Vacaciones' :
+                    'Agregar Tipo de Licencia';
+            }
+        }
+
+        // Actualizar la inicialización
+        window.addEventListener('DOMContentLoaded', function() {
+            verificarConexion();
+            cargarConvenios();
+            cargarHorasExtras();
+            cargarFeriados();
+            cargarAdicionales();
+            cargarDescuentos();
+            cargarVacaciones();
+            cargarLicencias();
+            cargarDatosAsociaciones();
+            cargarEmpleados();
+            cargarDatosFormularios();
+            
+            // Establecer período actual por defecto
+            const hoy = new Date();
+            const periodo = hoy.toISOString().substring(0, 7);
+            document.getElementById('liquidacion-periodo').value = periodo;
+        });
+
+
+
+
+
+
+
+
+
     </script>
 </body>
 </html>

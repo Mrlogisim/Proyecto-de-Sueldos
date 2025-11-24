@@ -706,6 +706,583 @@ app.get('/api/convenios/:id/licencias', async (req, res) => {
 
 
 
+// ===================================================================== //
+// TERCERA ENTREGA: EMPLEADOS Y CÁLCULO DE LIQUIDACIONES                //
+// ===================================================================== //
+
+// ============================================
+// RUTAS - EMPLEADOS
+// ============================================
+
+app.get('/api/empleados', async (req, res) => {
+    try {
+        const result = await pool.query(
+            `SELECT e.*, c.nombre as convenio_nombre 
+             FROM empleados e 
+             LEFT JOIN convenios c ON e.convenio_id = c.id 
+             WHERE e.activo = TRUE 
+             ORDER BY e.apellido, e.nombre`
+        );
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Error al obtener empleados' });
+    }
+});
+
+app.get('/api/empleados/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(
+            `SELECT e.*, c.nombre as convenio_nombre, c.* 
+             FROM empleados e 
+             LEFT JOIN convenios c ON e.convenio_id = c.id 
+             WHERE e.id = $1 AND e.activo = TRUE`,
+            [id]
+        );
+        
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Empleado no encontrado' });
+        }
+        
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Error al obtener empleado' });
+    }
+});
+
+app.post('/api/empleados', async (req, res) => {
+    try {
+        const { 
+            legajo, nombre, apellido, dni, fecha_nacimiento, 
+            fecha_ingreso, email, telefono, direccion, 
+            salario_base, convenio_id 
+        } = req.body;
+
+        const result = await pool.query(
+            `INSERT INTO empleados 
+            (legajo, nombre, apellido, dni, fecha_nacimiento, fecha_ingreso, 
+             email, telefono, direccion, salario_base, convenio_id) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) 
+            RETURNING *`,
+            [legajo, nombre, apellido, dni, fecha_nacimiento, fecha_ingreso,
+             email, telefono, direccion, parseFloat(salario_base), convenio_id]
+        );
+
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error('Error:', err);
+        if (err.code === '23505') {
+            res.status(400).json({ error: 'El legajo o DNI ya existe' });
+        } else {
+            res.status(500).json({ error: 'Error al crear empleado' });
+        }
+    }
+});
+
+app.put('/api/empleados/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { 
+            legajo, nombre, apellido, dni, fecha_nacimiento, 
+            fecha_ingreso, email, telefono, direccion, 
+            salario_base, convenio_id 
+        } = req.body;
+
+        const result = await pool.query(
+            `UPDATE empleados 
+            SET legajo = $1, nombre = $2, apellido = $3, dni = $4, 
+                fecha_nacimiento = $5, fecha_ingreso = $6, email = $7, 
+                telefono = $8, direccion = $9, salario_base = $10, 
+                convenio_id = $11, updated_at = CURRENT_TIMESTAMP
+            WHERE id = $12 AND activo = TRUE 
+            RETURNING *`,
+            [legajo, nombre, apellido, dni, fecha_nacimiento, fecha_ingreso,
+             email, telefono, direccion, parseFloat(salario_base), convenio_id, id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Empleado no encontrado' });
+        }
+
+        res.json(result.rows[0]);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Error al actualizar empleado' });
+    }
+});
+
+app.delete('/api/empleados/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(
+            'UPDATE empleados SET activo = FALSE WHERE id = $1 RETURNING id',
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Empleado no encontrado' });
+        }
+
+        res.json({ message: 'Empleado eliminado exitosamente' });
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Error al eliminar empleado' });
+    }
+});
+
+// ============================================
+// RUTAS - HORAS EXTRAS DE EMPLEADOS
+// ============================================
+
+app.get('/api/empleados/:id/horas-extras', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { periodo } = req.query; // Formato: YYYY-MM
+
+        let query = `
+            SELECT ehe.*, he.nombre as tipo_nombre, he.multiplicador
+            FROM empleado_horas_extras ehe
+            JOIN horas_extras he ON ehe.tipo_hora_extra_id = he.id
+            WHERE ehe.empleado_id = $1 AND ehe.activo = TRUE
+        `;
+        let params = [id];
+
+        if (periodo) {
+            query += ' AND TO_CHAR(ehe.fecha, \'YYYY-MM\') = $2';
+            params.push(periodo);
+        }
+
+        query += ' ORDER BY ehe.fecha DESC';
+
+        const result = await pool.query(query, params);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Error al obtener horas extras del empleado' });
+    }
+});
+
+app.post('/api/empleados/:id/horas-extras', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { tipo_hora_extra_id, cantidad, fecha, descripcion } = req.body;
+
+        const result = await pool.query(
+            `INSERT INTO empleado_horas_extras 
+            (empleado_id, tipo_hora_extra_id, cantidad, fecha, descripcion) 
+            VALUES ($1, $2, $3, $4, $5) 
+            RETURNING *`,
+            [id, tipo_hora_extra_id, parseFloat(cantidad), fecha, descripcion]
+        );
+
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Error al registrar hora extra' });
+    }
+});
+
+// ============================================
+// RUTAS - ADICIONALES DE EMPLEADOS
+// ============================================
+
+app.get('/api/empleados/:id/adicionales', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { periodo } = req.query;
+
+        let query = `
+            SELECT ea.*, a.nombre as adicional_nombre, a.tipo as adicional_tipo
+            FROM empleado_adicionales ea
+            JOIN adicionales a ON ea.adicional_id = a.id
+            WHERE ea.empleado_id = $1 AND ea.activo = TRUE
+        `;
+        let params = [id];
+
+        if (periodo) {
+            query += ' AND TO_CHAR(ea.fecha, \'YYYY-MM\') = $2';
+            params.push(periodo);
+        }
+
+        query += ' ORDER BY ea.fecha DESC';
+
+        const result = await pool.query(query, params);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Error al obtener adicionales del empleado' });
+    }
+});
+
+app.post('/api/empleados/:id/adicionales', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { adicional_id, monto, fecha, descripcion } = req.body;
+
+        const result = await pool.query(
+            `INSERT INTO empleado_adicionales 
+            (empleado_id, adicional_id, monto, fecha, descripcion) 
+            VALUES ($1, $2, $3, $4, $5) 
+            RETURNING *`,
+            [id, adicional_id, parseFloat(monto), fecha, descripcion]
+        );
+
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Error al registrar adicional' });
+    }
+});
+
+// ============================================
+// RUTAS - DESCUENTOS DE EMPLEADOS
+// ============================================
+
+app.get('/api/empleados/:id/descuentos', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { periodo } = req.query;
+
+        let query = `
+            SELECT ed.*, d.nombre as descuento_nombre, d.tipo as descuento_tipo, d.aplica_aportes
+            FROM empleado_descuentos ed
+            JOIN descuentos d ON ed.descuento_id = d.id
+            WHERE ed.empleado_id = $1 AND ed.activo = TRUE
+        `;
+        let params = [id];
+
+        if (periodo) {
+            query += ' AND TO_CHAR(ed.fecha, \'YYYY-MM\') = $2';
+            params.push(periodo);
+        }
+
+        query += ' ORDER BY ed.fecha DESC';
+
+        const result = await pool.query(query, params);
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Error al obtener descuentos del empleado' });
+    }
+});
+
+app.post('/api/empleados/:id/descuentos', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { descuento_id, monto, fecha, descripcion } = req.body;
+
+        const result = await pool.query(
+            `INSERT INTO empleado_descuentos 
+            (empleado_id, descuento_id, monto, fecha, descripcion) 
+            VALUES ($1, $2, $3, $4, $5) 
+            RETURNING *`,
+            [id, descuento_id, parseFloat(monto), fecha, descripcion]
+        );
+
+        res.status(201).json(result.rows[0]);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Error al registrar descuento' });
+    }
+});
+
+// ============================================
+// RUTAS - CÁLCULO DE LIQUIDACIONES
+// ============================================
+
+// Función para calcular liquidación
+async function calcularLiquidacion(empleadoId, periodo) {
+    // Obtener datos del empleado
+    const empleadoResult = await pool.query(
+        `SELECT e.*, c.* 
+         FROM empleados e 
+         LEFT JOIN convenios c ON e.convenio_id = c.id 
+         WHERE e.id = $1`,
+        [empleadoId]
+    );
+    
+    if (empleadoResult.rows.length === 0) {
+        throw new Error('Empleado no encontrado');
+    }
+    
+    const empleado = empleadoResult.rows[0];
+    
+    // Obtener horas extras del período
+    const horasExtrasResult = await pool.query(
+        `SELECT ehe.*, he.multiplicador 
+         FROM empleado_horas_extras ehe 
+         JOIN horas_extras he ON ehe.tipo_hora_extra_id = he.id 
+         WHERE ehe.empleado_id = $1 AND TO_CHAR(ehe.fecha, 'YYYY-MM') = $2 AND ehe.activo = TRUE`,
+        [empleadoId, periodo]
+    );
+    
+    // Obtener adicionales del período
+    const adicionalesResult = await pool.query(
+        `SELECT ea.* 
+         FROM empleado_adicionales ea 
+         WHERE ea.empleado_id = $1 AND TO_CHAR(ea.fecha, 'YYYY-MM') = $2 AND ea.activo = TRUE`,
+        [empleadoId, periodo]
+    );
+    
+    // Obtener descuentos del período
+    const descuentosResult = await pool.query(
+        `SELECT ed.*, d.tipo, d.aplica_aportes 
+         FROM empleado_descuentos ed 
+         JOIN descuentos d ON ed.descuento_id = d.id 
+         WHERE ed.empleado_id = $1 AND TO_CHAR(ed.fecha, 'YYYY-MM') = $2 AND ed.activo = TRUE`,
+        [empleadoId, periodo]
+    );
+
+    // CÁLCULO DE HABERES
+    const salarioBase = parseFloat(empleado.salario_base);
+    
+    // Calcular horas extras
+    let totalHorasExtras = 0;
+    const detalleHorasExtras = horasExtrasResult.rows.map(he => {
+        const valorHoraNormal = salarioBase / 30 / 8; // Asumiendo 8 horas diarias, 30 días
+        const valorHoraExtra = valorHoraNormal * parseFloat(he.multiplicador);
+        const totalHoraExtra = valorHoraExtra * parseFloat(he.cantidad);
+        totalHorasExtras += totalHoraExtra;
+        
+        return {
+            tipo: he.tipo_nombre,
+            cantidad: he.cantidad,
+            multiplicador: he.multiplicador,
+            valor_unitario: valorHoraExtra,
+            total: totalHoraExtra
+        };
+    });
+
+    // Calcular adicionales
+    let totalAdicionales = 0;
+    const detalleAdicionales = adicionalesResult.rows.map(ad => {
+        totalAdicionales += parseFloat(ad.monto);
+        return {
+            concepto: ad.descripcion || 'Adicional',
+            monto: parseFloat(ad.monto)
+        };
+    });
+
+    const totalHaberes = salarioBase + totalHorasExtras + totalAdicionales;
+
+    // CÁLCULO DE DESCUENTOS
+    let totalDescuentos = 0;
+    const detalleDescuentos = [];
+
+    // Descuentos por convenio (aportes)
+    if (empleado.convenio_id) {
+        const aportes = [
+            { nombre: 'Jubilación', porcentaje: parseFloat(empleado.aporte_jubilacion) },
+            { nombre: 'Obra Social', porcentaje: parseFloat(empleado.aporte_obra_social) },
+            { nombre: 'Sindical', porcentaje: parseFloat(empleado.aporte_sindical) },
+            { nombre: 'PAMI', porcentaje: parseFloat(empleado.aporte_pami) }
+        ];
+
+        aportes.forEach(aporte => {
+            const montoAporte = totalHaberes * (aporte.porcentaje / 100);
+            totalDescuentos += montoAporte;
+            detalleDescuentos.push({
+                concepto: `Aporte ${aporte.nombre}`,
+                tipo: 'porcentaje',
+                porcentaje: aporte.porcentaje,
+                monto: montoAporte
+            });
+        });
+    }
+
+    // Descuentos adicionales
+    descuentosResult.rows.forEach(desc => {
+        totalDescuentos += parseFloat(desc.monto);
+        detalleDescuentos.push({
+            concepto: desc.descripcion || 'Descuento adicional',
+            tipo: desc.tipo,
+            monto: parseFloat(desc.monto)
+        });
+    });
+
+    const netoAPagar = totalHaberes - totalDescuentos;
+
+    return {
+        empleado: {
+            id: empleado.id,
+            nombre: empleado.nombre,
+            apellido: empleado.apellido,
+            legajo: empleado.legajo
+        },
+        periodo: periodo,
+        salario_base: salarioBase,
+        haberes: {
+            salario_base: salarioBase,
+            horas_extras: totalHorasExtras,
+            adicionales: totalAdicionales,
+            total: totalHaberes,
+            detalle_horas_extras: detalleHorasExtras,
+            detalle_adicionales: detalleAdicionales
+        },
+        descuentos: {
+            total: totalDescuentos,
+            detalle: detalleDescuentos
+        },
+        neto_a_pagar: netoAPagar
+    };
+}
+
+// Ruta para calcular liquidación
+app.post('/api/empleados/:id/calcular-liquidacion', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { periodo } = req.body;
+
+        if (!periodo) {
+            return res.status(400).json({ error: 'El período es requerido (YYYY-MM)' });
+        }
+
+        const liquidacion = await calcularLiquidacion(id, periodo);
+        res.json(liquidacion);
+
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Error al calcular liquidación: ' + err.message });
+    }
+});
+
+// Ruta para guardar liquidación
+app.post('/api/empleados/:id/liquidaciones', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { periodo } = req.body;
+
+        if (!periodo) {
+            return res.status(400).json({ error: 'El período es requerido (YYYY-MM)' });
+        }
+
+        // Calcular liquidación
+        const liquidacionCalculada = await calcularLiquidacion(id, periodo);
+
+        // Guardar en base de datos
+        const result = await pool.query(
+            `INSERT INTO liquidaciones 
+            (empleado_id, periodo, fecha_liquidacion, salario_base, 
+             total_haberes, total_descuentos, neto_a_pagar, detalle) 
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8) 
+            RETURNING *`,
+            [id, periodo, new Date(), liquidacionCalculada.salario_base,
+             liquidacionCalculada.haberes.total, liquidacionCalculada.descuentos.total,
+             liquidacionCalculada.neto_a_pagar, JSON.stringify(liquidacionCalculada)]
+        );
+
+        res.status(201).json(result.rows[0]);
+
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Error al guardar liquidación: ' + err.message });
+    }
+});
+
+// Ruta para obtener historial de liquidaciones
+app.get('/api/empleados/:id/liquidaciones', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const result = await pool.query(
+            'SELECT * FROM liquidaciones WHERE empleado_id = $1 AND activo = TRUE ORDER BY periodo DESC',
+            [id]
+        );
+        res.json(result.rows);
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Error al obtener liquidaciones' });
+    }
+});
+
+// Ruta para obtener datos para formularios (convenios, horas extras, etc.)
+app.get('/api/datos-formularios', async (req, res) => {
+    try {
+        const [convenios, horasExtras, adicionales, descuentos] = await Promise.all([
+            pool.query('SELECT id, nombre FROM convenios WHERE activo = TRUE ORDER BY nombre'),
+            pool.query('SELECT id, nombre, multiplicador FROM horas_extras WHERE activo = TRUE ORDER BY nombre'),
+            pool.query('SELECT id, nombre FROM adicionales WHERE activo = TRUE ORDER BY nombre'),
+            pool.query('SELECT id, nombre FROM descuentos WHERE activo = TRUE ORDER BY nombre')
+        ]);
+
+        res.json({
+            convenios: convenios.rows,
+            horasExtras: horasExtras.rows,
+            adicionales: adicionales.rows,
+            descuentos: descuentos.rows
+        });
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Error al obtener datos para formularios' });
+    }
+});
+
+
+
+
+
+
+// Función para crear datos de prueba (ejecutar una sola vez)
+async function crearDatosPrueba() {
+    try {
+        // Verificar si ya existen empleados
+        const result = await pool.query('SELECT COUNT(*) FROM empleados');
+        if (parseInt(result.rows[0].count) > 0) {
+            return; // Ya hay datos, no crear más
+        }
+
+        // Crear empleados de prueba
+        const empleadosPrueba = [
+            {
+                legajo: 'EMP-001',
+                nombre: 'Juan',
+                apellido: 'Pérez',
+                dni: '12345678',
+                fecha_ingreso: '2020-01-15',
+                salario_base: 300000.00,
+                convenio_id: 1
+            },
+            {
+                legajo: 'EMP-002', 
+                nombre: 'María',
+                apellido: 'Gómez',
+                dni: '23456789',
+                fecha_ingreso: '2021-03-20',
+                salario_base: 280000.00,
+                convenio_id: 1
+            },
+            {
+                legajo: 'EMP-003',
+                nombre: 'Carlos',
+                apellido: 'López',
+                dni: '34567890',
+                fecha_ingreso: '2022-06-10',
+                salario_base: 250000.00,
+                convenio_id: null
+            }
+        ];
+
+        for (const emp of empleadosPrueba) {
+            await pool.query(
+                `INSERT INTO empleados 
+                (legajo, nombre, apellido, dni, fecha_ingreso, salario_base, convenio_id) 
+                VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+                [emp.legajo, emp.nombre, emp.apellido, emp.dni, emp.fecha_ingreso, emp.salario_base, emp.convenio_id]
+            );
+        }
+
+        console.log('✅ Datos de prueba creados exitosamente');
+
+    } catch (err) {
+        console.error('Error creando datos de prueba:', err);
+    }
+}
+
+// Llamar a la función después de que el servidor esté listo
+setTimeout(crearDatosPrueba, 2000);
+
+
 
 
 
