@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Sistema de Liquidación</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+            position: relative;
+        }
+
+        header h1 {
+            font-size: 1.8em;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 0.95em;
+        }
+
+        .back-btn {
+            position: absolute;
+            left: 30px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-50%) scale(1.05);
+        }
+
+        .dashboard-content {
+            padding: 30px;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+            transition: transform 0.3s;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-card.convenios { border-left-color: #667eea; }
+        .stat-card.horas-extras { border-left-color: #28a745; }
+        .stat-card.feriados { border-left-color: #ffc107; }
+        .stat-card.adicionales { border-left-color: #17a2b8; }
+        .stat-card.descuentos { border-left-color: #dc3545; }
+        .stat-card.licencias { border-left-color: #6f42c1; }
+
+        .stat-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 2.5em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .chart-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .chart-card h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .chart-placeholder {
+            height: 300px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .recent-activity {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .recent-activity h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .activity-list {
+            list-style: none;
+        }
+
+        .activity-item {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+        }
+
+        .activity-icon.success { background: #d4edda; color: #155724; }
+        .activity-icon.warning { background: #fff3cd; color: #856404; }
+        .activity-icon.info { background: #d1ecf1; color: #0c5460; }
+
+        .activity-content {
+            flex: 1;
+        }
+
+        .activity-title {
+            font-weight: 600;
+            margin-bottom: 2px;
+        }
+
+        .activity-time {
+            color: #666;
+            font-size: 0.8em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        @media (max-width: 768px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .back-btn {
+                position: relative;
+                left: 0;
+                top: 0;
+                transform: none;
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <button class="back-btn" onclick="goBack()">← Volver al Sistema</button>
+            <h1>📊 Dashboard del Sistema</h1>
+            <p>Resumen general y estadísticas del sistema de liquidación</p>
+        </header>
+
+        <div class="dashboard-content">
+            <!-- ESTADÍSTICAS PRINCIPALES -->
+            <div class="stats-grid" id="stats-grid">
+                <div class="loading">Cargando estadísticas...</div>
+            </div>
+
+            <!-- GRÁFICOS -->
+            <div class="charts-container">
+                <div class="chart-card">
+                    <h3>📈 Distribución de Convenios</h3>
+                    <div class="chart-placeholder" id="convenios-chart">
+                        Gráfico de distribución de convenios
+                    </div>
+                </div>
+                <div class="chart-card">
+                    <h3>💰 Tipos de Descuentos</h3>
+                    <div class="chart-placeholder" id="descuentos-chart">
+                        Gráfico de tipos de descuentos
+                    </div>
+                </div>
+            </div>
+
+            <!-- ACTIVIDAD RECIENTE -->
+            <div class="recent-activity">
+                <h3>🕐 Actividad Reciente</h3>
+                <div id="activity-list">
+                    <div class="loading">Cargando actividad reciente...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:3000/api';
+
+        // Función para volver al sistema principal
+        function goBack() {
+            window.location.href = 'index.html';
+        }
+
+        // Cargar todas las estadísticas
+        async function loadDashboardData() {
+            try {
+                await loadStats();
+                await loadRecentActivity();
+            } catch (error) {
+                console.error('Error cargando dashboard:', error);
+                showError('Error al cargar los datos del dashboard');
+            }
+        }
+
+        // Cargar estadísticas principales
+        async function loadStats() {
+            try {
+                const [
+                    conveniosResponse,
+                    horasExtrasResponse,
+                    feriadosResponse,
+                    adicionalesResponse,
+                    descuentosResponse,
+                    licenciasResponse,
+                    vacacionesResponse
+                ] = await Promise.all([
+                    fetch(`${API_URL}/convenios`),
+                    fetch(`${API_URL}/horas-extras`),
+                    fetch(`${API_URL}/feriados`),
+                    fetch(`${API_URL}/adicionales`),
+                    fetch(`${API_URL}/descuentos`),
+                    fetch(`${API_URL}/tipos-licencias`),
+                    fetch(`${API_URL}/politicas-vacaciones`)
+                ]);
+
+                const stats = {
+                    convenios: (await conveniosResponse.json()).length,
+                    horasExtras: (await horasExtrasResponse.json()).length,
+                    feriados: (await feriadosResponse.json()).length,
+                    adicionales: (await adicionalesResponse.json()).length,
+                    descuentos: (await descuentosResponse.json()).length,
+                    licencias: (await licenciasResponse.json()).length,
+                    vacaciones: (await vacacionesResponse.json()).length
+                };
+
+                displayStats(stats);
+            } catch (error) {
+                console.error('Error cargando estadísticas:', error);
+                document.getElementById('stats-grid').innerHTML = 
+                    '<div class="empty-state">Error al cargar estadísticas</div>';
+            }
+        }
+
+        // Mostrar estadísticas en el grid
+        function displayStats(stats) {
+            const statsGrid = document.getElementById('stats-grid');
+            
+            statsGrid.innerHTML = `
+                <div class="stat-card convenios">
+                    <div class="stat-icon">📋</div>
+                    <div class="stat-value">${stats.convenios}</div>
+                    <div class="stat-label">Convenios Colectivos</div>
+                </div>
+                <div class="stat-card horas-extras">
+                    <div class="stat-icon">⏰</div>
+                    <div class="stat-value">${stats.horasExtras}</div>
+                    <div class="stat-label">Tipos de Horas Extras</div>
+                </div>
+                <div class="stat-card feriados">
+                    <div class="stat-icon">🎉</div>
+                    <div class="stat-value">${stats.feriados}</div>
+                    <div class="stat-label">Feriados Registrados</div>
+                </div>
+                <div class="stat-card adicionales">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-value">${stats.adicionales}</div>
+                    <div class="stat-label">Adicionales Configurados</div>
+                </div>
+                <div class="stat-card descuentos">
+                    <div class="stat-icon">💸</div>
+                    <div class="stat-value">${stats.descuentos}</div>
+                    <div class="stat-label">Descuentos Configurados</div>
+                </div>
+                <div class="stat-card licencias">
+                    <div class="stat-icon">📄</div>
+                    <div class="stat-value">${stats.licencias}</div>
+                    <div class="stat-label">Tipos de Licencias</div>
+                </div>
+                <div class="stat-card vacaciones">
+                    <div class="stat-icon">🏖️</div>
+                    <div class="stat-value">${stats.vacaciones}</div>
+                    <div class="stat-label">Políticas de Vacaciones</div>
+                </div>
+            `;
+        }
+
+        // Cargar actividad reciente (simulada por ahora)
+        async function loadRecentActivity() {
+            const activityList = document.getElementById('activity-list');
+            
+            // En una implementación real, esto vendría de la API
+            const activities = [
+                {
+                    type: 'success',
+                    icon: '✓',
+                    title: 'Nuevo convenio creado',
+                    description: 'Convenio "Empleados de Comercio" agregado al sistema',
+                    time: 'Hace 2 horas'
+                },
+                {
+                    type: 'info',
+                    icon: 'ℹ',
+                    title: 'Configuración actualizada',
+                    description: 'Políticas de vacaciones modificadas',
+                    time: 'Hace 4 horas'
+                },
+                {
+                    type: 'warning',
+                    icon: '⚠',
+                    title: 'Revisión requerida',
+                    description: '3 descuentos pendientes de verificación',
+                    time: 'Hace 1 día'
+                },
+                {
+                    type: 'success',
+                    icon: '✓',
+                    title: 'Backup completado',
+                    description: 'Copia de seguridad del sistema realizada',
+                    time: 'Hace 1 día'
+                }
+            ];
+
+            activityList.innerHTML = `
+                <ul class="activity-list">
+                    ${activities.map(activity => `
+                        <li class="activity-item">
+                            <div class="activity-icon ${activity.type}">${activity.icon}</div>
+                            <div class="activity-content">
+                                <div class="activity-title">${activity.title}</div>
+                                <div class="activity-description">${activity.description}</div>
+                                <div class="activity-time">${activity.time}</div>
+                            </div>
+                        </li>
+                    `).join('')}
+                </ul>
+            `;
+        }
+
+        // Función para mostrar errores
+        function showError(message) {
+            const statsGrid = document.getElementById('stats-grid');
+            statsGrid.innerHTML = `<div class="empty-state">${message}</div>`;
+        }
+
+        // Cargar datos al iniciar
+        window.addEventListener('DOMContentLoaded', loadDashboardData);
+    </script>
+</body>
+</html>

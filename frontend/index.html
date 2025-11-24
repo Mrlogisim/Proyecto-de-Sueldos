@@ -1,0 +1,2034 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Liquidación de Sueldos</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+        }
+
+        .container {
+            display: flex;
+            width: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+
+        /* BARRA LATERAL */
+        .sidebar {
+            width: 280px;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            color: white;
+            padding: 0;
+        }
+
+        .sidebar-header {
+            padding: 30px 20px;
+            background: rgba(0,0,0,0.2);
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .sidebar-header h2 {
+            font-size: 1.3em;
+            margin-bottom: 5px;
+        }
+
+        .sidebar-header p {
+            opacity: 0.8;
+            font-size: 0.9em;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #28a745;
+            color: white;
+            border-radius: 15px;
+            font-size: 0.7em;
+            margin-top: 8px;
+        }
+
+        .status-badge.offline {
+            background: #dc3545;
+        }
+
+        .menu-group {
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .menu-title {
+            padding: 15px 20px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.3s;
+        }
+
+        .menu-title:hover {
+            background: rgba(255,255,255,0.1);
+        }
+
+        .menu-title i {
+            transition: transform 0.3s;
+        }
+
+        .menu-title.active i {
+            transform: rotate(180deg);
+        }
+
+        .menu-items {
+            display: none;
+            background: rgba(0,0,0,0.2);
+        }
+
+        .menu-items.active {
+            display: block;
+        }
+
+        .menu-item {
+            padding: 12px 20px 12px 35px;
+            cursor: pointer;
+            transition: background 0.3s;
+            border-left: 3px solid transparent;
+        }
+
+        .menu-item:hover {
+            background: rgba(255,255,255,0.1);
+            border-left-color: #667eea;
+        }
+
+        .menu-item.active {
+            background: rgba(102, 126, 234, 0.2);
+            border-left-color: #667eea;
+        }
+
+        /* CONTENIDO PRINCIPAL */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+        }
+
+        header h1 {
+            font-size: 1.8em;
+            margin-bottom: 8px;
+        }
+
+        header p {
+            opacity: 0.9;
+            font-size: 0.95em;
+        }
+
+        .content {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-container {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            padding: 12px 30px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .btn-danger:hover {
+            background: #c82333;
+        }
+
+        .btn-edit {
+            background: #ffc107;
+            color: #333;
+            padding: 8px 16px;
+            font-size: 12px;
+            margin-right: 5px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        tr:hover {
+            background: #f8f9fa;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #667eea;
+        }
+
+        h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.8em;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            body {
+                flex-direction: column;
+                padding: 10px;
+            }
+            
+            .container {
+                flex-direction: column;
+            }
+            
+            .sidebar {
+                width: 100%;
+                order: 2;
+            }
+            
+            .main-content {
+                order: 1;
+            }
+            
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+    /* SISTEMA DE NOTIFICACIONES */
+        .notifications-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            max-width: 400px;
+        }
+
+        .notification {
+            background: white;
+            border-radius: 10px;
+            padding: 15px 20px;
+            margin-bottom: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            border-left: 4px solid #28a745;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transform: translateX(400px);
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+            opacity: 1;
+        }
+
+        .notification.hide {
+            transform: translateX(400px);
+            opacity: 0;
+        }
+
+        .notification.success {
+            border-left-color: #28a745;
+        }
+
+        .notification.error {
+            border-left-color: #dc3545;
+        }
+
+        .notification.warning {
+            border-left-color: #ffc107;
+        }
+
+        .notification.info {
+            border-left-color: #17a2b8;
+        }
+
+        .notification-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .notification.success .notification-icon {
+            background: #28a745;
+            color: white;
+        }
+
+        .notification.error .notification-icon {
+            background: #dc3545;
+            color: white;
+        }
+
+        .notification.warning .notification-icon {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .notification.info .notification-icon {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .notification-content {
+            flex: 1;
+        }
+
+        .notification-title {
+            font-weight: 600;
+            font-size: 14px;
+            margin-bottom: 2px;
+        }
+
+        .notification-message {
+            font-size: 13px;
+            color: #666;
+        }
+
+        .notification-close {
+            background: none;
+            border: none;
+            font-size: 16px;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .notification-close:hover {
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .notifications-container {
+                top: 10px;
+                right: 10px;
+                left: 10px;
+                max-width: none;
+            }
+        }    
+    </style>
+</head>
+<body>
+    <!-- CONTENEDOR DE NOTIFICACIONES -->
+    <div class="notifications-container" id="notifications-container"></div>
+    <div class="container">
+        <!-- BARRA LATERAL -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h2 style="color: white;">💼 Sistema de Sueldos</h2>
+                <p>Panel de Administración</p>
+                <span id="db-status" class="status-badge">PostgreSQL Conectado</span>
+            </div>
+
+
+            <!-- dashboard -->
+            <div class="menu-group">
+                <div class="menu-title" onclick="toggleMenu('dashboard-menu')">
+                    <span>📊 Dashboard</span>
+                    <i>▼</i>
+                </div>
+                <div class="menu-items" id="dashboard-menu">
+                    <div class="menu-item" onclick="showDashboard()">Ver Dashboard</div>
+                </div>
+            </div>
+
+
+            <!-- GRUPO: CONVENIOS Y CONCEPTOS -->
+            <div class="menu-group">
+                <div class="menu-title active" onclick="toggleMenu('convenios-menu')">
+                    <span>📋 Convenios y Conceptos</span>
+                    <i>▼</i>
+                </div>
+                <div class="menu-items active" id="convenios-menu">
+                    <div class="menu-item active" onclick="showSection('convenios')">Convenios Colectivos</div>
+                    <div class="menu-item" onclick="showSection('horas-extras')">Horas Extras</div>
+                    <div class="menu-item" onclick="showSection('feriados')">Feriados</div>
+                    <div class="menu-item" onclick="showSection('adicionales')">Adicionales</div>
+                </div>
+            </div>
+
+            <!-- GRUPO: DESCUENTOS Y LICENCIAS -->
+            <div class="menu-group">
+                <div class="menu-title active" onclick="toggleMenu('descuentos-menu')">
+                    <span>💰 Descuentos y Licencias</span>
+                    <i>▼</i>
+                </div>
+                <div class="menu-items active" id="descuentos-menu">
+                    <div class="menu-item" onclick="showSection('descuentos')">Descuentos</div>
+                    <div class="menu-item" onclick="showSection('vacaciones')">Vacaciones</div>
+                    <div class="menu-item" onclick="showSection('licencias')">Licencias</div>
+                    <div class="menu-item" onclick="showSection('asociaciones')">Asociaciones</div>
+                </div>
+            </div>
+
+            <!-- GRUPO: EMPLEADOS Y LIQUIDACIONES -->
+            <div class="menu-group">
+                <div class="menu-title active" onclick="toggleMenu('empleados-menu')">
+                    <span>👥 Empleados y Liquidaciones</span>
+                    <i>▼</i>
+                </div>
+                <div class="menu-items active" id="empleados-menu">
+                    <div class="menu-item" onclick="showSection('empleados')">Gestión de Empleados</div>
+                    <div class="menu-item" onclick="showSection('liquidaciones')">Cálculo de Liquidaciones</div>
+                    <div class="menu-item" onclick="alert('Funcionalidad en desarrollo')">Reportes</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CONTENIDO PRINCIPAL -->
+        <div class="main-content">
+            <header>
+                <h1>Sistema de Liquidación de Sueldos</h1>
+                <p>Entrega 2: Configuración de Descuentos, Vacaciones y Licencias</p>
+            </header>
+
+            <div class="content">
+                <!-- SECCIÓN CONVENIOS -->
+                <div id="convenios" class="section active">
+                    <h2>Convenios Colectivos de Trabajo</h2>
+                    
+                    <div class="form-container">
+                        <h3 id="convenio-form-title">Agregar Nuevo Convenio</h3>
+                        <form id="convenio-form">
+                            <input type="hidden" id="convenio-id">
+                            
+                            <div class="form-group">
+                                <label>Nombre del Convenio*</label>
+                                <input type="text" id="convenio-nombre" placeholder="Ej: Empleados de Comercio" required>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Número de Convenio*</label>
+                                    <input type="text" id="convenio-numero" placeholder="Ej: CCT 130/75" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Salario Básico Mensual*</label>
+                                    <input type="number" id="convenio-salario" placeholder="0.00" step="0.01" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Aporte Jubilatorio (%)*</label>
+                                    <input type="number" id="convenio-jubilacion" placeholder="11" step="0.01" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Aporte Obra Social (%)*</label>
+                                    <input type="number" id="convenio-obra-social" placeholder="3" step="0.01" required>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Aporte Sindical (%)*</label>
+                                    <input type="number" id="convenio-sindical" placeholder="2.5" step="0.01" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Aporte PAMI (%)*</label>
+                                    <input type="number" id="convenio-pami" placeholder="3" step="0.01" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Descripción</label>
+                                <textarea id="convenio-descripcion" rows="3" placeholder="Descripción adicional del convenio..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn">Guardar Convenio</button>
+                            <button type="button" class="btn btn-danger" onclick="cancelarEdicion('convenio')" style="display:none;" id="convenio-cancelar">Cancelar</button>
+                        </form>
+                    </div>
+
+                    <div id="convenios-list"></div>
+                </div>
+
+                <!-- SECCIÓN HORAS EXTRAS -->
+                <div id="horas-extras" class="section">
+                    <h2>Tipos de Horas Extras</h2>
+                    
+                    <div class="form-container">
+                        <h3 id="hora-form-title">Agregar Tipo de Hora Extra</h3>
+                        <form id="hora-form">
+                            <input type="hidden" id="hora-id">
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Nombre del Tipo*</label>
+                                    <input type="text" id="hora-nombre" placeholder="Ej: Hora Extra Diurna" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Multiplicador*</label>
+                                    <input type="number" id="hora-multiplicador" placeholder="1.5" step="0.01" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Descripción</label>
+                                <textarea id="hora-descripcion" rows="3" placeholder="Ej: Horas trabajadas entre las 6:00 y 21:00"></textarea>
+                            </div>
+
+                            <button type="submit" class="btn">Guardar Tipo</button>
+                            <button type="button" class="btn btn-danger" onclick="cancelarEdicion('hora')" style="display:none;" id="hora-cancelar">Cancelar</button>
+                        </form>
+                    </div>
+
+                    <div id="horas-list"></div>
+                </div>
+
+                <!-- SECCIÓN FERIADOS -->
+                <div id="feriados" class="section">
+                    <h2>Feriados</h2>
+                    
+                    <div class="form-container">
+                        <h3 id="feriado-form-title">Agregar Feriado</h3>
+                        <form id="feriado-form">
+                            <input type="hidden" id="feriado-id">
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Nombre del Feriado*</label>
+                                    <input type="text" id="feriado-nombre" placeholder="Ej: Día del Trabajador" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Fecha*</label>
+                                    <input type="date" id="feriado-fecha" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Tipo de Feriado*</label>
+                                <select id="feriado-tipo" required>
+                                    <option value="">Seleccionar...</option>
+                                    <option value="nacional">Feriado Nacional</option>
+                                    <option value="provincial">Feriado Provincial</option>
+                                    <option value="inamovible">Feriado Inamovible</option>
+                                    <option value="trasladable">Feriado Trasladable</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Descripción</label>
+                                <textarea id="feriado-descripcion" rows="2" placeholder="Información adicional..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn">Guardar Feriado</button>
+                            <button type="button" class="btn btn-danger" onclick="cancelarEdicion('feriado')" style="display:none;" id="feriado-cancelar">Cancelar</button>
+                        </form>
+                    </div>
+
+                    <div id="feriados-list"></div>
+                </div>
+
+                <!-- SECCIÓN ADICIONALES -->
+                <div id="adicionales" class="section">
+                    <h2>Adicionales (Bonos y Complementos)</h2>
+                    
+                    <div class="form-container">
+                        <h3 id="adicional-form-title">Agregar Adicional</h3>
+                        <form id="adicional-form">
+                            <input type="hidden" id="adicional-id">
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Nombre del Adicional*</label>
+                                    <input type="text" id="adicional-nombre" placeholder="Ej: Presentismo" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Tipo de Cálculo*</label>
+                                    <select id="adicional-tipo" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="fijo">Monto Fijo</option>
+                                        <option value="porcentaje">Porcentaje del Salario</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Valor*</label>
+                                <input type="number" id="adicional-valor" placeholder="0.00" step="0.01" required>
+                                <small style="color: #6c757d;">Si es porcentaje, ingresar sin el símbolo % (Ej: 10 para 10%)</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Descripción</label>
+                                <textarea id="adicional-descripcion" rows="2" placeholder="Ej: Bono por asistencia perfecta..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn">Guardar Adicional</button>
+                            <button type="button" class="btn btn-danger" onclick="cancelarEdicion('adicional')" style="display:none;" id="adicional-cancelar">Cancelar</button>
+                        </form>
+                    </div>
+
+                    <div id="adicionales-list"></div>
+                </div>
+
+                <!-- SECCIÓN DESCUENTOS -->
+                <div id="descuentos" class="section">
+                    <h2>Descuentos</h2>
+                    
+                    <div class="form-container">
+                        <h3 id="descuento-form-title">Agregar Descuento</h3>
+                        <form id="descuento-form">
+                            <input type="hidden" id="descuento-id">
+                            
+                            <div class="form-group">
+                                <label>Nombre del Descuento*</label>
+                                <input type="text" id="descuento-nombre" placeholder="Ej: Adelanto de Sueldo" required>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Tipo de Descuento*</label>
+                                    <select id="descuento-tipo" required>
+                                        <option value="">Seleccionar...</option>
+                                        <option value="fijo">Monto Fijo</option>
+                                        <option value="porcentaje">Porcentaje</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Valor*</label>
+                                    <input type="number" id="descuento-valor" placeholder="0.00" step="0.01" required>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>
+                                    <input type="checkbox" id="descuento-aplica-aportes">
+                                    Aplica sobre base de aportes
+                                </label>
+                                <small style="color: #6c757d; display: block;">Si está marcado, el descuento se calcula sobre la base imponible de aportes</small>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Descripción</label>
+                                <textarea id="descuento-descripcion" rows="2" placeholder="Descripción del descuento..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn">Guardar Descuento</button>
+                            <button type="button" class="btn btn-danger" onclick="cancelarEdicion('descuento')" style="display:none;" id="descuento-cancelar">Cancelar</button>
+                        </form>
+                    </div>
+
+                    <div id="descuentos-list"></div>
+                </div>
+
+                <!-- SECCIÓN VACACIONES -->
+                <div id="vacaciones" class="section">
+                    <h2>Políticas de Vacaciones</h2>
+                    
+                    <div class="form-container">
+                        <h3 id="vacacion-form-title">Agregar Política de Vacaciones</h3>
+                        <form id="vacacion-form">
+                            <input type="hidden" id="vacacion-id">
+                            
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Antigüedad Mínima (años)*</label>
+                                    <input type="number" id="vacacion-antiguedad-min" placeholder="0" min="0" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Antigüedad Máxima (años)</label>
+                                    <input type="number" id="vacacion-antiguedad-max" placeholder="Dejar vacío para 'más de'">
+                                    <small style="color: #6c757d;">Opcional - dejar vacío para "más de X años"</small>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Días Base*</label>
+                                    <input type="number" id="vacacion-dias-base" placeholder="14" min="1" required>
+                                </div>
+                                <div class="form-group">
+                                    <label>Días Adicionales</label>
+                                    <input type="number" id="vacacion-dias-adicionales" placeholder="0" min="0">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Descripción</label>
+                                <textarea id="vacacion-descripcion" rows="2" placeholder="Ej: Vacaciones para empleados con hasta 5 años de antigüedad"></textarea>
+                            </div>
+
+                            <button type="submit" class="btn">Guardar Política</button>
+                            <button type="button" class="btn btn-danger" onclick="cancelarEdicion('vacacion')" style="display:none;" id="vacacion-cancelar">Cancelar</button>
+                        </form>
+                    </div>
+
+                    <div id="vacaciones-list"></div>
+                </div>
+
+                <!-- SECCIÓN LICENCIAS -->
+                <div id="licencias" class="section">
+                    <h2>Tipos de Licencias</h2>
+                    
+                    <div class="form-container">
+                        <h3 id="licencia-form-title">Agregar Tipo de Licencia</h3>
+                        <form id="licencia-form">
+                            <input type="hidden" id="licencia-id">
+                            
+                            <div class="form-group">
+                                <label>Nombre de la Licencia*</label>
+                                <input type="text" id="licencia-nombre" placeholder="Ej: Licencia por Enfermedad" required>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label>Límite de Días</label>
+                                    <input type="number" id="licencia-limite-dias" placeholder="Ej: 30 (opcional)" min="1">
+                                    <small style="color: #6c757d;">Dejar vacío si no hay límite</small>
+                                </div>
+                                <div class="form-group">
+                                    <label style="display: block; margin-bottom: 10px;">
+                                        <input type="checkbox" id="licencia-con-goce" checked>
+                                        Con goce de sueldo
+                                    </label>
+                                    <label style="display: block;">
+                                        <input type="checkbox" id="licencia-requiere-certificado">
+                                        Requiere certificado
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Descripción</label>
+                                <textarea id="licencia-descripcion" rows="2" placeholder="Descripción de la licencia..."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn">Guardar Licencia</button>
+                            <button type="button" class="btn btn-danger" onclick="cancelarEdicion('licencia')" style="display:none;" id="licencia-cancelar">Cancelar</button>
+                        </form>
+                    </div>
+
+                    <div id="licencias-list"></div>
+                </div>
+
+                <!-- SECCIÓN ASOCIACIONES -->
+                <div id="asociaciones" class="section">
+                    <h2>Asociar Conceptos a Convenios</h2>
+                    
+                    <div class="form-container">
+                        <h3>Asociar Descuentos a Convenio</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Seleccionar Convenio</label>
+                                <select id="asociacion-convenio">
+                                    <option value="">Cargando convenios...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Seleccionar Descuento</label>
+                                <select id="asociacion-descuento">
+                                    <option value="">Cargando descuentos...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Fecha Desde*</label>
+                                <input type="date" id="asociacion-fecha-desde" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Fecha Hasta</label>
+                                <input type="date" id="asociacion-fecha-hasta">
+                                <small style="color: #6c757d;">Opcional - dejar vacío para vigencia indefinida</small>
+                            </div>
+                        </div>
+                        <button type="button" class="btn" onclick="asociarDescuento()">Asociar Descuento</button>
+                    </div>
+
+                    <div class="form-container">
+                        <h3>Asociar Licencias a Convenio</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Seleccionar Convenio</label>
+                                <select id="asociacion-licencia-convenio">
+                                    <option value="">Cargando convenios...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Seleccionar Licencia</label>
+                                <select id="asociacion-licencia">
+                                    <option value="">Cargando licencias...</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="button" class="btn" onclick="asociarLicencia()">Asociar Licencia</button>
+                    </div>
+
+                    <div id="asociaciones-list"></div>
+                </div>  
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Configuración de la API
+        const API_URL = 'http://localhost:3000/api';
+
+      
+        // ============================================
+        // DASHBOARD
+        // ============================================
+
+        function showDashboard() {
+            window.open('dashboard.html', '_blank');
+            // O si prefieres que se abra en la misma pestaña:
+            // window.location.href = 'dashboard.html';
+        }
+
+        // ============================================
+// SISTEMA DE NOTIFICACIONES
+// ============================================
+
+
+
+function showNotification(type, title, message, duration = 5000) {
+    const container = document.getElementById('notifications-container');
+    const notification = document.createElement('div');
+    notification.className = `notification ${type}`;
+    
+    const icons = {
+        success: '✓',
+        error: '✗',
+        warning: '⚠',
+        info: 'ℹ'
+    };
+
+    notification.innerHTML = `
+        <div class="notification-icon">${icons[type]}</div>
+        <div class="notification-content">
+            <div class="notification-title">${title}</div>
+            <div class="notification-message">${message}</div>
+        </div>
+        <button class="notification-close" onclick="closeNotification(this)">×</button>
+    `;
+
+    container.appendChild(notification);
+
+    // Animación de entrada
+    setTimeout(() => {
+        notification.classList.add('show');
+    }, 10);
+
+    // Auto-eliminación después del tiempo especificado
+    if (duration > 0) {
+        setTimeout(() => {
+            closeNotification(notification.querySelector('.notification-close'));
+        }, duration);
+    }
+
+    return notification;
+}
+
+function closeNotification(closeButton) {
+    const notification = closeButton.closest('.notification');
+    notification.classList.remove('show');
+    notification.classList.add('hide');
+    
+    setTimeout(() => {
+        if (notification.parentNode) {
+            notification.parentNode.removeChild(notification);
+        }
+    }, 300);
+}
+
+// Función auxiliar para mostrar resultados de operaciones
+function showOperationResult(operation, success, customMessage = null) {
+    const messages = {
+        create: {
+            success: 'creado exitosamente',
+            error: 'Error al crear'
+        },
+        update: {
+            success: 'actualizado exitosamente',
+            error: 'Error al actualizar'
+        },
+        delete: {
+            success: 'eliminado exitosamente',
+            error: 'Error al eliminar'
+        },
+        load: {
+            success: 'cargado exitosamente',
+            error: 'Error al cargar'
+        },
+        associate: {
+            success: 'asociado exitosamente',
+            error: 'Error al asociar'
+        }
+    };
+
+    const type = success ? 'success' : 'error';
+    const baseMessage = messages[operation] ? messages[operation][type] : (success ? 'Operación completada' : 'Error en la operación');
+    const message = customMessage || baseMessage;
+    const title = success ? 'Operación Exitosa' : 'Error';
+
+    showNotification(type, title, message);
+}
+
+        // Verificar conexión al cargar la página
+        async function verificarConexion() {
+            try {
+                const response = await fetch(`${API_URL}/convenios`);
+                if (response.ok) {
+                    document.getElementById('db-status').textContent = '✓ PostgreSQL Conectado';
+                    document.getElementById('db-status').classList.remove('offline');
+                    showNotification('success', 'Conexión Exitosa', 'Conectado a la base de datos PostgreSQL');
+                }
+            } catch (error) {
+                document.getElementById('db-status').textContent = '✗ Sin conexión al servidor';
+                document.getElementById('db-status').classList.add('offline');
+                // console.error('Error de conexión:', error);
+                showNotification('error', 'Error de Conexión', 'No se pudo conectar al servidor. Verifica que esté corriendo.');
+                showNotification('error', 'Error de Conexión', 'Mismo numero de convenio');
+            }
+        }
+
+        // Funciones para la barra lateral
+        function toggleMenu(menuId) {
+            const menu = document.getElementById(menuId);
+            const title = menu.previousElementSibling;
+            
+            menu.classList.toggle('active');
+            title.classList.toggle('active');
+        }
+
+        // Navegación entre secciones
+        function showSection(sectionName) {
+            // Ocultar todas las secciones
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            
+            // Remover active de todos los items del menú
+            document.querySelectorAll('.menu-item').forEach(item => item.classList.remove('active'));
+            
+            // Mostrar sección seleccionada
+            document.getElementById(sectionName).classList.add('active');
+            
+            // Activar item del menú correspondiente
+            const menuItem = document.querySelector(`.menu-item[onclick="showSection('${sectionName}')"]`);
+            if (menuItem) {
+                menuItem.classList.add('active');
+            }
+        }
+
+        // ============================================
+        // CONVENIOS
+        // ============================================
+        
+        async function cargarConvenios() {
+            const container = document.getElementById('convenios-list');
+            container.innerHTML = '<div class="loading">Cargando convenios...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/convenios`);
+                const convenios = await response.json();
+
+                if (convenios.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>No hay convenios registrados</p></div>';
+                    return;
+                }
+
+                let html = '<table><thead><tr><th>Nombre</th><th>Número</th><th>Salario Básico</th><th>Aportes Totales</th><th>Acciones</th></tr></thead><tbody>';
+                
+                convenios.forEach(c => {
+                    const aportesTotales = parseFloat(c.aporte_jubilacion) + parseFloat(c.aporte_obra_social) + 
+                                          parseFloat(c.aporte_sindical) + parseFloat(c.aporte_pami);
+                    html += `
+                        <tr>
+                            <td><strong>${c.nombre}</strong></td>
+                            <td>${c.numero}</td>
+                            <td>$${parseFloat(c.salario_basico).toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                            <td>${aportesTotales.toFixed(2)}%</td>
+                            <td>
+                                <button class="btn btn-edit" onclick="editarConvenio(${c.id})">Editar</button>
+                                <button class="btn btn-danger" style="padding: 8px 16px; font-size: 12px;" onclick="eliminarConvenio(${c.id})">Eliminar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+                showOperationResult('load', true, 'Convenios cargados correctamente');
+            } catch (error) {
+                
+                showOperationResult('load', false, 'Error al cargar convenios');
+
+            }
+            showOperationResult('load', true, 'Convenios cargados correctamente');
+        }
+
+        document.getElementById('convenio-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('convenio-id').value;
+            const data = {
+                nombre: document.getElementById('convenio-nombre').value,
+                numero: document.getElementById('convenio-numero').value,
+                salario_basico: parseFloat(document.getElementById('convenio-salario').value),
+                aporte_jubilacion: parseFloat(document.getElementById('convenio-jubilacion').value),
+                aporte_obra_social: parseFloat(document.getElementById('convenio-obra-social').value),
+                aporte_sindical: parseFloat(document.getElementById('convenio-sindical').value),
+                aporte_pami: parseFloat(document.getElementById('convenio-pami').value),
+                descripcion: document.getElementById('convenio-descripcion').value
+            };
+
+            try {
+                const url = id ? `${API_URL}/convenios/${id}` : `${API_URL}/convenios`;
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    this.reset();
+                    document.getElementById('convenio-id').value = '';
+                    document.getElementById('convenio-cancelar').style.display = 'none';
+                    document.getElementById('convenio-form-title').textContent = 'Agregar Nuevo Convenio';
+                    cargarConvenios();
+                    // alert(id ? 'Convenio actualizado exitosamente' : 'Convenio creado exitosamente');
+                    const operation = id ? 'update' : 'create';
+                    showOperationResult(operation, true);
+                } else {
+                    // const error = await response.json();
+                    // alert('Error: ' + error.error);
+                    showOperationResult(id ? 'update' : 'create', false, error.error);
+                }
+            } catch (error) {
+                // alert('Error al guardar convenio. Verifica la conexión al servidor.');
+                // console.error('Error:', error);
+                showOperationResult(id ? 'update' : 'create', false, 'Error de conexión al servidor');
+            }
+        });
+
+        async function editarConvenio(id) {
+            try {
+                const response = await fetch(`${API_URL}/convenios/${id}`);
+                const convenio = await response.json();
+                
+                document.getElementById('convenio-id').value = convenio.id;
+                document.getElementById('convenio-nombre').value = convenio.nombre;
+                document.getElementById('convenio-numero').value = convenio.numero;
+                document.getElementById('convenio-salario').value = convenio.salario_basico;
+                document.getElementById('convenio-jubilacion').value = convenio.aporte_jubilacion;
+                document.getElementById('convenio-obra-social').value = convenio.aporte_obra_social;
+                document.getElementById('convenio-sindical').value = convenio.aporte_sindical;
+                document.getElementById('convenio-pami').value = convenio.aporte_pami;
+                document.getElementById('convenio-descripcion').value = convenio.descripcion || '';
+                document.getElementById('convenio-cancelar').style.display = 'inline-block';
+                document.getElementById('convenio-form-title').textContent = 'Editar Convenio';
+                window.scrollTo(0, 0);
+                showNotification('info', 'Modo Edición', 'Editando convenio: ' + convenio.nombre);
+            } catch (error) {
+                alert('Error al cargar convenio para editar');
+                console.error('Error:', error);
+            }
+        }
+
+        async function eliminarConvenio(id) {
+            if (!confirm('¿Estás seguro de eliminar este convenio?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/convenios/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    cargarConvenios();
+                    alert('Convenio eliminado exitosamente');
+                    showOperationResult('delete', true);
+                }
+            } catch (error) {
+                alert('Error al eliminar convenio');
+                console.error('Error:', error);
+            }
+        }
+
+        // ============================================
+        // HORAS EXTRAS
+        // ============================================
+        
+        async function cargarHorasExtras() {
+            const container = document.getElementById('horas-list');
+            container.innerHTML = '<div class="loading">Cargando horas extras...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/horas-extras`);
+                const horas = await response.json();
+
+                if (horas.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>No hay tipos de horas extras configurados</p></div>';
+                    return;
+                }
+
+                let html = '<table><thead><tr><th>Tipo</th><th>Multiplicador</th><th>Descripción</th><th>Acciones</th></tr></thead><tbody>';
+                
+                horas.forEach(h => {
+                    html += `
+                        <tr>
+                            <td><strong>${h.nombre}</strong></td>
+                            <td>${parseFloat(h.multiplicador).toFixed(2)}x</td>
+                            <td>${h.descripcion || '-'}</td>
+                            <td>
+                                <button class="btn btn-edit" onclick="editarHora(${h.id})">Editar</button>
+                                <button class="btn btn-danger" style="padding: 8px 16px; font-size: 12px;" onclick="eliminarHora(${h.id})">Eliminar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = '<div class="alert alert-error">Error al cargar horas extras</div>';
+                console.error('Error:', error);
+            }
+        }
+
+        document.getElementById('hora-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('hora-id').value;
+            const data = {
+                nombre: document.getElementById('hora-nombre').value,
+                multiplicador: parseFloat(document.getElementById('hora-multiplicador').value),
+                descripcion: document.getElementById('hora-descripcion').value
+            };
+
+            try {
+                const url = id ? `${API_URL}/horas-extras/${id}` : `${API_URL}/horas-extras`;
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    this.reset();
+                    document.getElementById('hora-id').value = '';
+                    document.getElementById('hora-cancelar').style.display = 'none';
+                    document.getElementById('hora-form-title').textContent = 'Agregar Tipo de Hora Extra';
+                    cargarHorasExtras();
+                    alert(id ? 'Hora extra actualizada' : 'Hora extra creada');
+                }
+            } catch (error) {
+                alert('Error al guardar hora extra');
+                console.error('Error:', error);
+            }
+        });
+
+        async function editarHora(id) {
+            try {
+                const response = await fetch(`${API_URL}/horas-extras`);
+                const horas = await response.json();
+                const hora = horas.find(h => h.id === id);
+                
+                document.getElementById('hora-id').value = hora.id;
+                document.getElementById('hora-nombre').value = hora.nombre;
+                document.getElementById('hora-multiplicador').value = hora.multiplicador;
+                document.getElementById('hora-descripcion').value = hora.descripcion || '';
+                document.getElementById('hora-cancelar').style.display = 'inline-block';
+                document.getElementById('hora-form-title').textContent = 'Editar Tipo de Hora Extra';
+                window.scrollTo(0, 0);
+            } catch (error) {
+                alert('Error al cargar hora extra');
+                console.error('Error:', error);
+            }
+        }
+
+        async function eliminarHora(id) {
+            if (!confirm('¿Estás seguro de eliminar este tipo de hora extra?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/horas-extras/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    cargarHorasExtras();
+                    alert('Hora extra eliminada');
+                }
+            } catch (error) {
+                alert('Error al eliminar hora extra');
+                console.error('Error:', error);
+            }
+        }
+
+        // ============================================
+        // FERIADOS
+        // ============================================
+        
+        async function cargarFeriados() {
+            const container = document.getElementById('feriados-list');
+            container.innerHTML = '<div class="loading">Cargando feriados...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/feriados`);
+                const feriados = await response.json();
+
+                if (feriados.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>No hay feriados registrados</p></div>';
+                    return;
+                }
+
+                let html = '<table><thead><tr><th>Nombre</th><th>Fecha</th><th>Tipo</th><th>Descripción</th><th>Acciones</th></tr></thead><tbody>';
+                
+                feriados.forEach(f => {
+                    const fecha = new Date(f.fecha + 'T00:00:00');
+                    const fechaFormateada = fecha.toLocaleDateString('es-AR');
+                    html += `
+                        <tr>
+                            <td><strong>${f.nombre}</strong></td>
+                            <td>${fechaFormateada}</td>
+                            <td>${f.tipo}</td>
+                            <td>${f.descripcion || '-'}</td>
+                            <td>
+                                <button class="btn btn-edit" onclick="editarFeriado(${f.id})">Editar</button>
+                                <button class="btn btn-danger" style="padding: 8px 16px; font-size: 12px;" onclick="eliminarFeriado(${f.id})">Eliminar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = '<div class="alert alert-error">Error al cargar feriados</div>';
+                console.error('Error:', error);
+            }
+        }
+
+        document.getElementById('feriado-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('feriado-id').value;
+            const data = {
+                nombre: document.getElementById('feriado-nombre').value,
+                fecha: document.getElementById('feriado-fecha').value,
+                tipo: document.getElementById('feriado-tipo').value,
+                descripcion: document.getElementById('feriado-descripcion').value
+            };
+
+            try {
+                const url = id ? `${API_URL}/feriados/${id}` : `${API_URL}/feriados`;
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    this.reset();
+                    document.getElementById('feriado-id').value = '';
+                    document.getElementById('feriado-cancelar').style.display = 'none';
+                    document.getElementById('feriado-form-title').textContent = 'Agregar Feriado';
+                    cargarFeriados();
+                    alert(id ? 'Feriado actualizado' : 'Feriado creado');
+                }
+            } catch (error) {
+                alert('Error al guardar feriado');
+                console.error('Error:', error);
+            }
+        });
+
+        async function editarFeriado(id) {
+            try {
+                const response = await fetch(`${API_URL}/feriados`);
+                const feriados = await response.json();
+                const feriado = feriados.find(f => f.id === id);
+                
+                document.getElementById('feriado-id').value = feriado.id;
+                document.getElementById('feriado-nombre').value = feriado.nombre;
+                document.getElementById('feriado-fecha').value = feriado.fecha;
+                document.getElementById('feriado-tipo').value = feriado.tipo;
+                document.getElementById('feriado-descripcion').value = feriado.descripcion || '';
+                document.getElementById('feriado-cancelar').style.display = 'inline-block';
+                document.getElementById('feriado-form-title').textContent = 'Editar Feriado';
+                window.scrollTo(0, 0);
+            } catch (error) {
+                alert('Error al cargar feriado');
+                console.error('Error:', error);
+            }
+        }
+
+        async function eliminarFeriado(id) {
+            if (!confirm('¿Estás seguro de eliminar este feriado?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/feriados/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    cargarFeriados();
+                    alert('Feriado eliminado');
+                }
+            } catch (error) {
+                alert('Error al eliminar feriado');
+                console.error('Error:', error);
+            }
+        }
+
+        // ============================================
+        // ADICIONALES
+        // ============================================
+        
+        async function cargarAdicionales() {
+            const container = document.getElementById('adicionales-list');
+            container.innerHTML = '<div class="loading">Cargando adicionales...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/adicionales`);
+                const adicionales = await response.json();
+
+                if (adicionales.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>No hay adicionales configurados</p></div>';
+                    return;
+                }
+
+                let html = '<table><thead><tr><th>Nombre</th><th>Tipo</th><th>Valor</th><th>Descripción</th><th>Acciones</th></tr></thead><tbody>';
+                
+                adicionales.forEach(a => {
+                    const valorTexto = a.tipo === 'fijo' 
+                        ? `${parseFloat(a.valor).toLocaleString('es-AR', {minimumFractionDigits: 2})}`
+                        : `${parseFloat(a.valor).toFixed(2)}%`;
+                    
+                    html += `
+                        <tr>
+                            <td><strong>${a.nombre}</strong></td>
+                            <td>${a.tipo === 'fijo' ? 'Monto Fijo' : 'Porcentaje'}</td>
+                            <td>${valorTexto}</td>
+                            <td>${a.descripcion || '-'}</td>
+                            <td>
+                                <button class="btn btn-edit" onclick="editarAdicional(${a.id})">Editar</button>
+                                <button class="btn btn-danger" style="padding: 8px 16px; font-size: 12px;" onclick="eliminarAdicional(${a.id})">Eliminar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = '<div class="alert alert-error">Error al cargar adicionales</div>';
+                console.error('Error:', error);
+            }
+        }
+
+        document.getElementById('adicional-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('adicional-id').value;
+            const data = {
+                nombre: document.getElementById('adicional-nombre').value,
+                tipo: document.getElementById('adicional-tipo').value,
+                valor: parseFloat(document.getElementById('adicional-valor').value),
+                descripcion: document.getElementById('adicional-descripcion').value
+            };
+
+            try {
+                const url = id ? `${API_URL}/adicionales/${id}` : `${API_URL}/adicionales`;
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    this.reset();
+                    document.getElementById('adicional-id').value = '';
+                    document.getElementById('adicional-cancelar').style.display = 'none';
+                    document.getElementById('adicional-form-title').textContent = 'Agregar Adicional';
+                    cargarAdicionales();
+                    alert(id ? 'Adicional actualizado' : 'Adicional creado');
+                }
+            } catch (error) {
+                alert('Error al guardar adicional');
+                console.error('Error:', error);
+            }
+        });
+
+        async function editarAdicional(id) {
+            try {
+                const response = await fetch(`${API_URL}/adicionales`);
+                const adicionales = await response.json();
+                const adicional = adicionales.find(a => a.id === id);
+                
+                document.getElementById('adicional-id').value = adicional.id;
+                document.getElementById('adicional-nombre').value = adicional.nombre;
+                document.getElementById('adicional-tipo').value = adicional.tipo;
+                document.getElementById('adicional-valor').value = adicional.valor;
+                document.getElementById('adicional-descripcion').value = adicional.descripcion || '';
+                document.getElementById('adicional-cancelar').style.display = 'inline-block';
+                document.getElementById('adicional-form-title').textContent = 'Editar Adicional';
+                window.scrollTo(0, 0);
+            } catch (error) {
+                alert('Error al cargar adicional');
+                console.error('Error:', error);
+            }
+        }
+
+        async function eliminarAdicional(id) {
+            if (!confirm('¿Estás seguro de eliminar este adicional?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/adicionales/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    cargarAdicionales();
+                    alert('Adicional eliminado');
+                }
+            } catch (error) {
+                alert('Error al eliminar adicional');
+                console.error('Error:', error);
+            }
+        }
+
+        // ============================================
+        // DESCUENTOS
+        // ============================================
+        
+        async function cargarDescuentos() {
+            const container = document.getElementById('descuentos-list');
+            container.innerHTML = '<div class="loading">Cargando descuentos...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/descuentos`);
+                const descuentos = await response.json();
+
+                if (descuentos.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>No hay descuentos configurados</p></div>';
+                    return;
+                }
+
+                let html = '<table><thead><tr><th>Nombre</th><th>Tipo</th><th>Valor</th><th>Aplica Aportes</th><th>Descripción</th><th>Acciones</th></tr></thead><tbody>';
+                
+                descuentos.forEach(d => {
+                    const valorTexto = d.tipo === 'fijo' 
+                        ? `$${parseFloat(d.valor).toLocaleString('es-AR', {minimumFractionDigits: 2})}`
+                        : `${parseFloat(d.valor).toFixed(2)}%`;
+                    
+                    html += `
+                        <tr>
+                            <td><strong>${d.nombre}</strong></td>
+                            <td>${d.tipo === 'fijo' ? 'Monto Fijo' : 'Porcentaje'}</td>
+                            <td>${valorTexto}</td>
+                            <td>${d.aplica_aportes ? 'Sí' : 'No'}</td>
+                            <td>${d.descripcion || '-'}</td>
+                            <td>
+                                <button class="btn btn-edit" onclick="editarDescuento(${d.id})">Editar</button>
+                                <button class="btn btn-danger" style="padding: 8px 16px; font-size: 12px;" onclick="eliminarDescuento(${d.id})">Eliminar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = '<div class="alert alert-error">Error al cargar descuentos</div>';
+                console.error('Error:', error);
+            }
+        }
+
+        document.getElementById('descuento-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('descuento-id').value;
+            const data = {
+                nombre: document.getElementById('descuento-nombre').value,
+                tipo: document.getElementById('descuento-tipo').value,
+                valor: parseFloat(document.getElementById('descuento-valor').value),
+                aplica_aportes: document.getElementById('descuento-aplica-aportes').checked,
+                descripcion: document.getElementById('descuento-descripcion').value
+            };
+
+            try {
+                const url = id ? `${API_URL}/descuentos/${id}` : `${API_URL}/descuentos`;
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    this.reset();
+                    document.getElementById('descuento-id').value = '';
+                    document.getElementById('descuento-cancelar').style.display = 'none';
+                    document.getElementById('descuento-form-title').textContent = 'Agregar Descuento';
+                    cargarDescuentos();
+                    alert(id ? 'Descuento actualizado' : 'Descuento creado');
+                }
+            } catch (error) {
+                alert('Error al guardar descuento');
+                console.error('Error:', error);
+            }
+        });
+
+        async function editarDescuento(id) {
+            try {
+                const response = await fetch(`${API_URL}/descuentos/${id}`);
+                const descuento = await response.json();
+                
+                document.getElementById('descuento-id').value = descuento.id;
+                document.getElementById('descuento-nombre').value = descuento.nombre;
+                document.getElementById('descuento-tipo').value = descuento.tipo;
+                document.getElementById('descuento-valor').value = descuento.valor;
+                document.getElementById('descuento-aplica-aportes').checked = descuento.aplica_aportes;
+                document.getElementById('descuento-descripcion').value = descuento.descripcion || '';
+                document.getElementById('descuento-cancelar').style.display = 'inline-block';
+                document.getElementById('descuento-form-title').textContent = 'Editar Descuento';
+                window.scrollTo(0, 0);
+            } catch (error) {
+                alert('Error al cargar descuento');
+                console.error('Error:', error);
+            }
+        }
+
+        async function eliminarDescuento(id) {
+            if (!confirm('¿Estás seguro de eliminar este descuento?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/descuentos/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    cargarDescuentos();
+                    alert('Descuento eliminado');
+                }
+            } catch (error) {
+                alert('Error al eliminar descuento');
+                console.error('Error:', error);
+            }
+        }
+
+        // ============================================
+        // VACACIONES
+        // ============================================
+
+        async function cargarVacaciones() {
+            const container = document.getElementById('vacaciones-list');
+            container.innerHTML = '<div class="loading">Cargando políticas de vacaciones...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/politicas-vacaciones`);
+                const vacaciones = await response.json();
+
+                if (vacaciones.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>No hay políticas de vacaciones configuradas</p></div>';
+                    return;
+                }
+
+                let html = '<table><thead><tr><th>Rango de Antigüedad</th><th>Días Base</th><th>Días Adicionales</th><th>Total Días</th><th>Descripción</th><th>Acciones</th></tr></thead><tbody>';
+                
+                vacaciones.forEach(v => {
+                    const rango = v.antiguedad_maxima 
+                        ? `${v.antiguedad_minima} - ${v.antiguedad_maxima} años`
+                        : `Más de ${v.antiguedad_minima} años`;
+                    
+                    html += `
+                        <tr>
+                            <td><strong>${rango}</strong></td>
+                            <td>${v.dias_base} días</td>
+                            <td>${v.dias_adicionales || 0} días</td>
+                            <td><strong>${v.dias_base + (v.dias_adicionales || 0)} días</strong></td>
+                            <td>${v.descripcion || '-'}</td>
+                            <td>
+                                <button class="btn btn-edit" onclick="editarVacacion(${v.id})">Editar</button>
+                                <button class="btn btn-danger" style="padding: 8px 16px; font-size: 12px;" onclick="eliminarVacacion(${v.id})">Eliminar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = '<div class="alert alert-error">Error al cargar políticas de vacaciones</div>';
+                console.error('Error:', error);
+            }
+        }
+
+        document.getElementById('vacacion-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('vacacion-id').value;
+            const data = {
+                antiguedad_minima: parseInt(document.getElementById('vacacion-antiguedad-min').value),
+                antiguedad_maxima: document.getElementById('vacacion-antiguedad-max').value ? parseInt(document.getElementById('vacacion-antiguedad-max').value) : null,
+                dias_base: parseInt(document.getElementById('vacacion-dias-base').value),
+                dias_adicionales: parseInt(document.getElementById('vacacion-dias-adicionales').value) || 0,
+                descripcion: document.getElementById('vacacion-descripcion').value
+            };
+
+            try {
+                const url = id ? `${API_URL}/politicas-vacaciones/${id}` : `${API_URL}/politicas-vacaciones`;
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    this.reset();
+                    document.getElementById('vacacion-id').value = '';
+                    document.getElementById('vacacion-cancelar').style.display = 'none';
+                    document.getElementById('vacacion-form-title').textContent = 'Agregar Política de Vacaciones';
+                    cargarVacaciones();
+                    alert(id ? 'Política de vacaciones actualizada' : 'Política de vacaciones creada');
+                }
+            } catch (error) {
+                alert('Error al guardar política de vacaciones');
+                console.error('Error:', error);
+            }
+        });
+
+        async function editarVacacion(id) {
+            try {
+                const response = await fetch(`${API_URL}/politicas-vacaciones/${id}`);
+                const vacacion = await response.json();
+                
+                document.getElementById('vacacion-id').value = vacacion.id;
+                document.getElementById('vacacion-antiguedad-min').value = vacacion.antiguedad_minima;
+                document.getElementById('vacacion-antiguedad-max').value = vacacion.antiguedad_maxima || '';
+                document.getElementById('vacacion-dias-base').value = vacacion.dias_base;
+                document.getElementById('vacacion-dias-adicionales').value = vacacion.dias_adicionales || '';
+                document.getElementById('vacacion-descripcion').value = vacacion.descripcion || '';
+                document.getElementById('vacacion-cancelar').style.display = 'inline-block';
+                document.getElementById('vacacion-form-title').textContent = 'Editar Política de Vacaciones';
+                window.scrollTo(0, 0);
+            } catch (error) {
+                alert('Error al cargar política de vacaciones');
+                console.error('Error:', error);
+            }
+        }
+
+        async function eliminarVacacion(id) {
+            if (!confirm('¿Estás seguro de eliminar esta política de vacaciones?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/politicas-vacaciones/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    cargarVacaciones();
+                    alert('Política de vacaciones eliminada');
+                }
+            } catch (error) {
+                alert('Error al eliminar política de vacaciones');
+                console.error('Error:', error);
+            }
+        }
+
+        // ============================================
+        // LICENCIAS
+        // ============================================
+
+        async function cargarLicencias() {
+            const container = document.getElementById('licencias-list');
+            container.innerHTML = '<div class="loading">Cargando tipos de licencias...</div>';
+
+            try {
+                const response = await fetch(`${API_URL}/tipos-licencias`);
+                const licencias = await response.json();
+
+                if (licencias.length === 0) {
+                    container.innerHTML = '<div class="empty-state"><p>No hay tipos de licencias configurados</p></div>';
+                    return;
+                }
+
+                let html = '<table><thead><tr><th>Nombre</th><th>Goce de Sueldo</th><th>Límite de Días</th><th>Requiere Certificado</th><th>Descripción</th><th>Acciones</th></tr></thead><tbody>';
+                
+                licencias.forEach(l => {
+                    html += `
+                        <tr>
+                            <td><strong>${l.nombre}</strong></td>
+                            <td>${l.con_goce_sueldo ? 'Sí' : 'No'}</td>
+                            <td>${l.limite_dias ? l.limite_dias + ' días' : 'Sin límite'}</td>
+                            <td>${l.requiere_certificado ? 'Sí' : 'No'}</td>
+                            <td>${l.descripcion || '-'}</td>
+                            <td>
+                                <button class="btn btn-edit" onclick="editarLicencia(${l.id})">Editar</button>
+                                <button class="btn btn-danger" style="padding: 8px 16px; font-size: 12px;" onclick="eliminarLicencia(${l.id})">Eliminar</button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                
+                html += '</tbody></table>';
+                container.innerHTML = html;
+            } catch (error) {
+                container.innerHTML = '<div class="alert alert-error">Error al cargar tipos de licencias</div>';
+                console.error('Error:', error);
+            }
+        }
+
+        document.getElementById('licencia-form').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const id = document.getElementById('licencia-id').value;
+            const data = {
+                nombre: document.getElementById('licencia-nombre').value,
+                con_goce_sueldo: document.getElementById('licencia-con-goce').checked,
+                limite_dias: document.getElementById('licencia-limite-dias').value ? parseInt(document.getElementById('licencia-limite-dias').value) : null,
+                requiere_certificado: document.getElementById('licencia-requiere-certificado').checked,
+                descripcion: document.getElementById('licencia-descripcion').value
+            };
+
+            try {
+                const url = id ? `${API_URL}/tipos-licencias/${id}` : `${API_URL}/tipos-licencias`;
+                const method = id ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                if (response.ok) {
+                    this.reset();
+                    document.getElementById('licencia-id').value = '';
+                    document.getElementById('licencia-cancelar').style.display = 'none';
+                    document.getElementById('licencia-form-title').textContent = 'Agregar Tipo de Licencia';
+                    cargarLicencias();
+                    alert(id ? 'Tipo de licencia actualizado' : 'Tipo de licencia creado');
+                }
+            } catch (error) {
+                alert('Error al guardar tipo de licencia');
+                console.error('Error:', error);
+            }
+        });
+
+        async function editarLicencia(id) {
+            try {
+                const response = await fetch(`${API_URL}/tipos-licencias/${id}`);
+                const licencia = await response.json();
+                
+                document.getElementById('licencia-id').value = licencia.id;
+                document.getElementById('licencia-nombre').value = licencia.nombre;
+                document.getElementById('licencia-con-goce').checked = licencia.con_goce_sueldo;
+                document.getElementById('licencia-limite-dias').value = licencia.limite_dias || '';
+                document.getElementById('licencia-requiere-certificado').checked = licencia.requiere_certificado;
+                document.getElementById('licencia-descripcion').value = licencia.descripcion || '';
+                document.getElementById('licencia-cancelar').style.display = 'inline-block';
+                document.getElementById('licencia-form-title').textContent = 'Editar Tipo de Licencia';
+                window.scrollTo(0, 0);
+            } catch (error) {
+                alert('Error al cargar tipo de licencia');
+                console.error('Error:', error);
+            }
+        }
+
+        async function eliminarLicencia(id) {
+            if (!confirm('¿Estás seguro de eliminar este tipo de licencia?')) return;
+            
+            try {
+                const response = await fetch(`${API_URL}/tipos-licencias/${id}`, { method: 'DELETE' });
+                if (response.ok) {
+                    cargarLicencias();
+                    alert('Tipo de licencia eliminado');
+                }
+            } catch (error) {
+                alert('Error al eliminar tipo de licencia');
+                console.error('Error:', error);
+            }
+        }
+
+        // ============================================
+        // ASOCIACIONES
+        // ============================================
+
+        async function cargarDatosAsociaciones() {
+            try {
+                // Cargar convenios
+                const responseConvenios = await fetch(`${API_URL}/convenios`);
+                const convenios = await responseConvenios.json();
+                
+                const selectConvenio = document.getElementById('asociacion-convenio');
+                const selectLicenciaConvenio = document.getElementById('asociacion-licencia-convenio');
+                
+                selectConvenio.innerHTML = '<option value="">Seleccionar convenio...</option>';
+                selectLicenciaConvenio.innerHTML = '<option value="">Seleccionar convenio...</option>';
+                
+                convenios.forEach(c => {
+                    selectConvenio.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
+                    selectLicenciaConvenio.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
+                });
+
+                // Cargar descuentos
+                const responseDescuentos = await fetch(`${API_URL}/descuentos`);
+                const descuentos = await responseDescuentos.json();
+                
+                const selectDescuento = document.getElementById('asociacion-descuento');
+                selectDescuento.innerHTML = '<option value="">Seleccionar descuento...</option>';
+                
+                descuentos.forEach(d => {
+                    selectDescuento.innerHTML += `<option value="${d.id}">${d.nombre}</option>`;
+                });
+
+                // Cargar licencias
+                const responseLicencias = await fetch(`${API_URL}/tipos-licencias`);
+                const licencias = await responseLicencias.json();
+                
+                const selectLicencia = document.getElementById('asociacion-licencia');
+                selectLicencia.innerHTML = '<option value="">Seleccionar licencia...</option>';
+                
+                licencias.forEach(l => {
+                    selectLicencia.innerHTML += `<option value="${l.id}">${l.nombre}</option>`;
+                });
+
+            } catch (error) {
+                console.error('Error al cargar datos para asociaciones:', error);
+            }
+        }
+
+        async function asociarDescuento() {
+            const convenioId = document.getElementById('asociacion-convenio').value;
+            const descuentoId = document.getElementById('asociacion-descuento').value;
+            const fechaDesde = document.getElementById('asociacion-fecha-desde').value;
+            const fechaHasta = document.getElementById('asociacion-fecha-hasta').value;
+
+            if (!convenioId || !descuentoId || !fechaDesde) {
+                alert('Por favor complete todos los campos obligatorios');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/convenios/${convenioId}/descuentos`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        descuento_id: descuentoId,
+                        fecha_desde: fechaDesde,
+                        fecha_hasta: fechaHasta || null
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Descuento asociado al convenio exitosamente');
+                    // Limpiar formulario
+                    document.getElementById('asociacion-descuento').value = '';
+                    document.getElementById('asociacion-fecha-desde').value = '';
+                    document.getElementById('asociacion-fecha-hasta').value = '';
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + error.error);
+                }
+            } catch (error) {
+                alert('Error al asociar descuento');
+                console.error('Error:', error);
+            }
+        }
+
+        async function asociarLicencia() {
+            const convenioId = document.getElementById('asociacion-licencia-convenio').value;
+            const licenciaId = document.getElementById('asociacion-licencia').value;
+
+            if (!convenioId || !licenciaId) {
+                alert('Por favor seleccione un convenio y una licencia');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/convenios/${convenioId}/licencias`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        licencia_id: licenciaId
+                    })
+                });
+
+                if (response.ok) {
+                    alert('Licencia asociada al convenio exitosamente');
+                    // Limpiar formulario
+                    document.getElementById('asociacion-licencia').value = '';
+                } else {
+                    const error = await response.json();
+                    alert('Error: ' + error.error);
+                }
+            } catch (error) {
+                alert('Error al asociar licencia');
+                console.error('Error:', error);
+            }
+        }
+
+        // ============================================
+        // FUNCIONES AUXILIARES
+        // ============================================
+        
+        function cancelarEdicion(tipo) {
+            document.getElementById(`${tipo}-form`).reset();
+            document.getElementById(`${tipo}-id`).value = '';
+            document.getElementById(`${tipo}-cancelar`).style.display = 'none';
+            document.getElementById(`${tipo}-form-title`).textContent = 
+                tipo === 'convenio' ? 'Agregar Nuevo Convenio' :
+                tipo === 'hora' ? 'Agregar Tipo de Hora Extra' :
+                tipo === 'feriado' ? 'Agregar Feriado' :
+                tipo === 'adicional' ? 'Agregar Adicional' :
+                tipo === 'descuento' ? 'Agregar Descuento' :
+                tipo === 'vacacion' ? 'Agregar Política de Vacaciones' :
+                'Agregar Tipo de Licencia';
+        }
+
+        // ============================================
+        // INICIALIZACIÓN
+        // ============================================
+        
+        // Cargar datos al iniciar
+        window.addEventListener('DOMContentLoaded', function() {
+            verificarConexion();
+            cargarConvenios();
+            cargarHorasExtras();
+            cargarFeriados();
+            cargarAdicionales();
+            cargarDescuentos();
+            cargarVacaciones();
+            cargarLicencias();
+            cargarDatosAsociaciones();
+        });
+    </script>
+</body>
+</html>
