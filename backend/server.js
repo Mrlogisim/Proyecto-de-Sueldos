@@ -5,6 +5,7 @@
 const express = require('express');
 const cors = require('cors');
 const { Pool } = require('pg');
+const path = require('path'); // IMPORTANTE: Necesario para manejar rutas de carpetas
 require('dotenv').config();
 
 const app = express();
@@ -36,8 +37,10 @@ pool.connect((err, client, release) => {
 // ============================================
 app.use(cors()); // Permitir peticiones desde el frontend
 app.use(express.json()); // Parse JSON en el body
-// Servir archivos estáticos desde el directorio actual
-app.use(express.static(__dirname));
+
+// CORRECCIÓN AQUÍ: 
+// Servir archivos estáticos desde la carpeta 'frontend' (subiendo un nivel desde 'backend')
+app.use(express.static(path.join(__dirname, '../frontend')));
 
 // Logging middleware
 app.use((req, res, next) => {
@@ -348,47 +351,9 @@ app.delete('/api/adicionales/:id', async (req, res) => {
     }
 });
 
-// ============================================
-// RUTA PRINCIPAL
-// ============================================
-
-/*
-app.get('/', (req, res) => {
-    res.send(`
-        <h1>API Sistema de Liquidación de Sueldos</h1>
-        <p>El servidor está funcionando correctamente</p>
-        <h2>Endpoints disponibles:</h2>
-        <ul>
-            <li>GET /api/convenios</li>
-            <li>POST /api/convenios</li>
-            <li>PUT /api/convenios/:id</li>
-            <li>DELETE /api/convenios/:id</li>
-            <li>GET /api/horas-extras</li>
-            <li>GET /api/feriados</li>
-            <li>GET /api/adicionales</li>
-        </ul>
-    `);
-}); 
-*/
-
-
-
-
-
-
-
-
 // ===================================================================== //
 // SEGUNDA ENTREGA: CONFIGURACIÓN DE DESCUENTOS, VACACIONES Y LICENCIAS  //
 // ===================================================================== //
-
-
-
-
-
-
-
-
 
 // ============================================
 // RUTAS - DESCUENTOS
@@ -704,8 +669,6 @@ app.get('/api/convenios/:id/licencias', async (req, res) => {
     }
 });
 
-
-
 // ===================================================================== //
 // TERCERA ENTREGA: EMPLEADOS Y CÁLCULO DE LIQUIDACIONES                //
 // ===================================================================== //
@@ -734,8 +697,7 @@ app.get('/api/empleados/:id', async (req, res) => {
     try {
         const { id } = req.params;
         const result = await pool.query(
-            `SELECT e.*, c.nombre as convenio_nombre, c.* 
-             FROM empleados e 
+            `SELECT e.*, c.nombre as convenio_nombre, c.* FROM empleados e 
              LEFT JOIN convenios c ON e.convenio_id = c.id 
              WHERE e.id = $1 AND e.activo = TRUE`,
             [id]
@@ -996,8 +958,7 @@ app.post('/api/empleados/:id/descuentos', async (req, res) => {
 async function calcularLiquidacion(empleadoId, periodo) {
     // Obtener datos del empleado
     const empleadoResult = await pool.query(
-        `SELECT e.*, c.* 
-         FROM empleados e 
+        `SELECT e.*, c.* FROM empleados e 
          LEFT JOIN convenios c ON e.convenio_id = c.id 
          WHERE e.id = $1`,
         [empleadoId]
@@ -1020,8 +981,7 @@ async function calcularLiquidacion(empleadoId, periodo) {
     
     // Obtener adicionales del período
     const adicionalesResult = await pool.query(
-        `SELECT ea.* 
-         FROM empleado_adicionales ea 
+        `SELECT ea.* FROM empleado_adicionales ea 
          WHERE ea.empleado_id = $1 AND TO_CHAR(ea.fecha, 'YYYY-MM') = $2 AND ea.activo = TRUE`,
         [empleadoId, periodo]
     );
@@ -1218,11 +1178,6 @@ app.get('/api/datos-formularios', async (req, res) => {
     }
 });
 
-
-
-
-
-
 // Función para crear datos de prueba (ejecutar una sola vez)
 async function crearDatosPrueba() {
     try {
@@ -1282,14 +1237,189 @@ async function crearDatosPrueba() {
 // Llamar a la función después de que el servidor esté listo
 setTimeout(crearDatosPrueba, 2000);
 
+// ===================================================================== //
+// CUARTA ENTREGA: GENERACIÓN DE RECIBOS Y REPORTES DE NÓMINA           //
+// ===================================================================== //
 
+// ============================================
+// RUTAS - GENERACIÓN DE RECIBOS
+// ============================================
 
+// Obtener datos para generar recibo
+app.get('/api/recibos/:empleadoId/:periodo', async (req, res) => {
+    try {
+        const { empleadoId, periodo } = req.params;
+        
+        // Calcular liquidación para el período
+        const liquidacion = await calcularLiquidacion(empleadoId, periodo);
+        
+        // Obtener datos adicionales del empleado
+        const empleadoResult = await pool.query(
+            `SELECT e.*, c.nombre as convenio_nombre 
+             FROM empleados e 
+             LEFT JOIN convenios c ON e.convenio_id = c.id 
+             WHERE e.id = $1`,
+            [empleadoId]
+        );
+        
+        if (empleadoResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Empleado no encontrado' });
+        }
+        
+        const empleado = empleadoResult.rows[0];
+        
+        // Construir objeto de recibo
+        const recibo = {
+            empleado: {
+                legajo: empleado.legajo,
+                nombre: empleado.nombre,
+                apellido: empleado.apellido,
+                dni: empleado.dni,
+                fecha_ingreso: empleado.fecha_ingreso,
+                convenio: empleado.convenio_nombre
+            },
+            periodo: periodo,
+            fecha_emision: new Date().toISOString().split('T')[0],
+            haberes: liquidacion.haberes,
+            descuentos: liquidacion.descuentos,
+            neto_a_pagar: liquidacion.neto_a_pagar,
+            detalle_completo: liquidacion
+        };
+        
+        res.json(recibo);
+        
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Error al generar recibo: ' + err.message });
+    }
+});
 
+// ============================================
+// RUTAS - REPORTES DE NÓMINA
+// ============================================
 
+// Generar reporte de nómina para un período
+app.get('/api/nomina/:periodo', async (req, res) => {
+    try {
+        const { periodo } = req.params;
+        
+        // Obtener todos los empleados activos
+        const empleadosResult = await pool.query(
+            `SELECT id, legajo, nombre, apellido, dni, salario_base, convenio_id 
+             FROM empleados 
+             WHERE activo = TRUE 
+             ORDER BY apellido, nombre`
+        );
+        
+        const empleados = empleadosResult.rows;
+        const reporteNomina = [];
+        let totalNomina = 0;
+        
+        // Calcular liquidación para cada empleado
+        for (const empleado of empleados) {
+            try {
+                const liquidacion = await calcularLiquidacion(empleado.id, periodo);
+                
+                reporteNomina.push({
+                    legajo: empleado.legajo,
+                    nombre: `${empleado.apellido}, ${empleado.nombre}`,
+                    dni: empleado.dni,
+                    salario_base: liquidacion.salario_base,
+                    horas_extras: liquidacion.haberes.horas_extras,
+                    adicionales: liquidacion.haberes.adicionales,
+                    total_haberes: liquidacion.haberes.total,
+                    total_descuentos: liquidacion.descuentos.total,
+                    neto_a_pagar: liquidacion.neto_a_pagar
+                });
+                
+                totalNomina += liquidacion.neto_a_pagar;
+                
+            } catch (error) {
+                console.error(`Error calculando liquidación para empleado ${empleado.legajo}:`, error);
+                // Continuar con el siguiente empleado
+            }
+        }
+        
+        res.json({
+            periodo: periodo,
+            fecha_generacion: new Date().toISOString(),
+            total_empleados: reporteNomina.length,
+            total_nomina: totalNomina,
+            empleados: reporteNomina
+        });
+        
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Error al generar reporte de nómina: ' + err.message });
+    }
+});
 
+// Generar reporte de nómina para empleados específicos
+app.post('/api/nomina/:periodo/empleados', async (req, res) => {
+    try {
+        const { periodo } = req.params;
+        const { empleadosIds } = req.body; // Array de IDs de empleados
+        
+        if (!empleadosIds || !Array.isArray(empleadosIds)) {
+            return res.status(400).json({ error: 'Se requiere un array de IDs de empleados' });
+        }
+        
+        const reporteNomina = [];
+        let totalNomina = 0;
+        
+        // Calcular liquidación para cada empleado seleccionado
+        for (const empleadoId of empleadosIds) {
+            try {
+                const empleadoResult = await pool.query(
+                    'SELECT id, legajo, nombre, apellido, dni, salario_base FROM empleados WHERE id = $1 AND activo = TRUE',
+                    [empleadoId]
+                );
+                
+                if (empleadoResult.rows.length === 0) {
+                    continue; // Saltar empleado no encontrado
+                }
+                
+                const empleado = empleadoResult.rows[0];
+                const liquidacion = await calcularLiquidacion(empleadoId, periodo);
+                
+                reporteNomina.push({
+                    legajo: empleado.legajo,
+                    nombre: `${empleado.apellido}, ${empleado.nombre}`,
+                    dni: empleado.dni,
+                    salario_base: liquidacion.salario_base,
+                    horas_extras: liquidacion.haberes.horas_extras,
+                    adicionales: liquidacion.haberes.adicionales,
+                    total_haberes: liquidacion.haberes.total,
+                    total_descuentos: liquidacion.descuentos.total,
+                    neto_a_pagar: liquidacion.neto_a_pagar
+                });
+                
+                totalNomina += liquidacion.neto_a_pagar;
+                
+            } catch (error) {
+                console.error(`Error calculando liquidación para empleado ID ${empleadoId}:`, error);
+                // Continuar con el siguiente empleado
+            }
+        }
+        
+        res.json({
+            periodo: periodo,
+            fecha_generacion: new Date().toISOString(),
+            total_empleados: reporteNomina.length,
+            total_nomina: totalNomina,
+            empleados: reporteNomina
+        });
+        
+    } catch (err) {
+        console.error('Error:', err);
+        res.status(500).json({ error: 'Error al generar reporte de nómina: ' + err.message });
+    }
+});
 
+// CORRECCIÓN DE LA RUTA PRINCIPAL:
+// Servir el index.html desde la carpeta 'frontend'
 app.get('/', (req, res) => {
-    res.sendFile('index.html', { root: '../frontend' });
+    res.sendFile(path.join(__dirname, '../frontend/index.html'));
 });
 
 // ============================================

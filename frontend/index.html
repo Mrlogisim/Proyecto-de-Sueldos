@@ -4,453 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Liquidación de Sueldos</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    <link rel="stylesheet" href="styles.css">
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-            display: flex;
-        }
 
-        .container {
-            display: flex;
-            width: 100%;
-            max-width: 1400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            overflow: hidden;
-        }
+    <!-- Librerías para PDF y Excel -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-        /* BARRA LATERAL */
-        .sidebar {
-            width: 280px;
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            color: white;
-            padding: 0;
-        }
-
-        .sidebar-header {
-            padding: 30px 20px;
-            background: rgba(0,0,0,0.2);
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .sidebar-header h2 {
-            font-size: 1.3em;
-            margin-bottom: 5px;
-        }
-
-        .sidebar-header p {
-            opacity: 0.8;
-            font-size: 0.9em;
-        }
-
-        .status-badge {
-            display: inline-block;
-            padding: 4px 12px;
-            background: #28a745;
-            color: white;
-            border-radius: 15px;
-            font-size: 0.7em;
-            margin-top: 8px;
-        }
-
-        .status-badge.offline {
-            background: #dc3545;
-        }
-
-        .menu-group {
-            border-bottom: 1px solid rgba(255,255,255,0.1);
-        }
-
-        .menu-title {
-            padding: 15px 20px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            transition: background 0.3s;
-        }
-
-        .menu-title:hover {
-            background: rgba(255,255,255,0.1);
-        }
-
-        .menu-title i {
-            transition: transform 0.3s;
-        }
-
-        .menu-title.active i {
-            transform: rotate(180deg);
-        }
-
-        .menu-items {
-            display: none;
-            background: rgba(0,0,0,0.2);
-        }
-
-        .menu-items.active {
-            display: block;
-        }
-
-        .menu-item {
-            padding: 12px 20px 12px 35px;
-            cursor: pointer;
-            transition: background 0.3s;
-            border-left: 3px solid transparent;
-        }
-
-        .menu-item:hover {
-            background: rgba(255,255,255,0.1);
-            border-left-color: #667eea;
-        }
-
-        .menu-item.active {
-            background: rgba(102, 126, 234, 0.2);
-            border-left-color: #667eea;
-        }
-
-        /* CONTENIDO PRINCIPAL */
-        .main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-        }
-
-        header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 25px 30px;
-            text-align: center;
-        }
-
-        header h1 {
-            font-size: 1.8em;
-            margin-bottom: 8px;
-        }
-
-        header p {
-            opacity: 0.9;
-            font-size: 0.95em;
-        }
-
-        .content {
-            flex: 1;
-            padding: 30px;
-            overflow-y: auto;
-        }
-
-        .section {
-            display: none;
-        }
-
-        .section.active {
-            display: block;
-            animation: fadeIn 0.3s;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .form-container {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-            color: #333;
-        }
-
-        input, textarea, select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e9ecef;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border 0.3s;
-        }
-
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .btn {
-            padding: 12px 30px;
-            background: #667eea;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-
-        .btn:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-        }
-
-        .btn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-        }
-
-        .btn-danger:hover {
-            background: #c82333;
-        }
-
-        .btn-edit {
-            background: #ffc107;
-            color: #333;
-            padding: 8px 16px;
-            font-size: 12px;
-            margin-right: 5px;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        th {
-            background: #667eea;
-            color: white;
-            padding: 15px;
-            text-align: left;
-            font-weight: 600;
-        }
-
-        td {
-            padding: 15px;
-            border-bottom: 1px solid #e9ecef;
-        }
-
-        tr:hover {
-            background: #f8f9fa;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 40px;
-            color: #6c757d;
-        }
-
-        .loading {
-            text-align: center;
-            padding: 40px;
-            color: #667eea;
-        }
-
-        h2 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 1.8em;
-        }
-
-        .form-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        @media (max-width: 768px) {
-            body {
-                flex-direction: column;
-                padding: 10px;
-            }
-            
-            .container {
-                flex-direction: column;
-            }
-            
-            .sidebar {
-                width: 100%;
-                order: 2;
-            }
-            
-            .main-content {
-                order: 1;
-            }
-            
-            .form-row {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            font-weight: 500;
-        }
-
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-    /* SISTEMA DE NOTIFICACIONES */
-        .notifications-container {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            max-width: 400px;
-        }
-
-        .notification {
-            background: white;
-            border-radius: 10px;
-            padding: 15px 20px;
-            margin-bottom: 10px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            border-left: 4px solid #28a745;
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            transform: translateX(400px);
-            opacity: 0;
-            transition: all 0.3s ease;
-        }
-
-        .notification.show {
-            transform: translateX(0);
-            opacity: 1;
-        }
-
-        .notification.hide {
-            transform: translateX(400px);
-            opacity: 0;
-        }
-
-        .notification.success {
-            border-left-color: #28a745;
-        }
-
-        .notification.error {
-            border-left-color: #dc3545;
-        }
-
-        .notification.warning {
-            border-left-color: #ffc107;
-        }
-
-        .notification.info {
-            border-left-color: #17a2b8;
-        }
-
-        .notification-icon {
-            width: 24px;
-            height: 24px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 14px;
-            font-weight: bold;
-        }
-
-        .notification.success .notification-icon {
-            background: #28a745;
-            color: white;
-        }
-
-        .notification.error .notification-icon {
-            background: #dc3545;
-            color: white;
-        }
-
-        .notification.warning .notification-icon {
-            background: #ffc107;
-            color: #212529;
-        }
-
-        .notification.info .notification-icon {
-            background: #17a2b8;
-            color: white;
-        }
-
-        .notification-content {
-            flex: 1;
-        }
-
-        .notification-title {
-            font-weight: 600;
-            font-size: 14px;
-            margin-bottom: 2px;
-        }
-
-        .notification-message {
-            font-size: 13px;
-            color: #666;
-        }
-
-        .notification-close {
-            background: none;
-            border: none;
-            font-size: 16px;
-            color: #999;
-            cursor: pointer;
-            padding: 0;
-            width: 20px;
-            height: 20px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .notification-close:hover {
-            color: #666;
-        }
-
-        @media (max-width: 768px) {
-            .notifications-container {
-                top: 10px;
-                right: 10px;
-                left: 10px;
-                max-width: none;
-            }
-        }    
-    </style>
 </head>
 <body>
     <!-- CONTENEDOR DE NOTIFICACIONES -->
@@ -514,7 +75,7 @@
                 <div class="menu-items active" id="empleados-menu">
                     <div class="menu-item" onclick="showSection('empleados')">Gestión de Empleados</div>
                     <div class="menu-item" onclick="showSection('liquidaciones')">Cálculo de Liquidaciones</div>
-                    <div class="menu-item" onclick="alert('Funcionalidad en desarrollo')">Reportes</div>
+                    <div class="menu-item" onclick="showSection('reportes')">Reportes y Recibos</div>
                 </div>
             </div>
         </div>
@@ -523,7 +84,7 @@
         <div class="main-content">
             <header>
                 <h1>Sistema de Liquidación de Sueldos</h1>
-                <p>Entrega 2: Configuración de Descuentos, Vacaciones y Licencias</p>
+                <p>Entrega 4: Generación de Recibos y Reportes de Nómina</p>
             </header>
 
             <div class="content">
@@ -1107,7 +668,85 @@
                     </div>
                 </div>
 
-                
+
+                <!-- SECCIÓN REPORTES Y RECIBOS -->
+                <div id="reportes" class="section">
+                    <h2>📊 Reportes y Recibos de Sueldo</h2>
+                    
+                    <!-- GENERACIÓN DE RECIBOS INDIVIDUALES -->
+                    <div class="form-container">
+                        <h3>📄 Generar Recibo de Sueldo Individual</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Seleccionar Empleado*</label>
+                                <select id="recibo-empleado">
+                                    <option value="">Cargando empleados...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Período*</label>
+                                <input type="month" id="recibo-periodo" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <button type="button" class="btn" onclick="generarRecibo()">Generar Recibo</button>
+                                <button type="button" class="btn" onclick="imprimirRecibo()" style="display:none;" id="btn-imprimir-recibo">Imprimir Recibo</button>
+                                <button type="button" class="btn" onclick="descargarReciboPDF()" style="display:none;" id="btn-descargar-recibo">Descargar PDF</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- VISTA PREVIA DEL RECIBO -->
+                    <div id="vista-previa-recibo" style="display: none;">
+                        <div class="form-container">
+                            <h3>Vista Previa del Recibo</h3>
+                            <div id="contenido-recibo"></div>
+                        </div>
+                    </div>
+
+                    <!-- REPORTE DE NÓMINA -->
+                    <div class="form-container">
+                        <h3>📋 Generar Reporte de Nómina</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Período*</label>
+                                <input type="month" id="nomina-periodo" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo de Reporte</label>
+                                <select id="tipo-reporte" onchange="toggleSeleccionEmpleados()">
+                                    <option value="todos">Todos los empleados</option>
+                                    <option value="seleccionados">Empleados seleccionados</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- SELECTOR DE EMPLEADOS (solo visible cuando se selecciona "seleccionados") -->
+                        <div id="selector-empleados" style="display: none;">
+                            <div class="form-group">
+                                <label>Seleccionar Empleados</label>
+                                <div id="lista-empleados-checkbox" style="max-height: 200px; overflow-y: auto; border: 1px solid #ddd; padding: 10px; border-radius: 5px;">
+                                    <!-- Aquí se cargarán los checkboxes de empleados -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="button" class="btn" onclick="generarReporteNomina()">Generar Reporte de Nómina</button>
+                        <button type="button" class="btn" onclick="exportarExcel()" style="display:none;" id="btn-exportar-excel">Exportar a Excel</button>
+                    </div>
+
+                    <!-- RESULTADO DEL REPORTE DE NÓMINA -->
+                    <div id="resultado-nomina" style="display: none;">
+                        <div class="form-container">
+                            <h3>Resultado del Reporte de Nómina</h3>
+                            <div id="detalle-nomina"></div>
+                        </div>
+                    </div>
+                </div>
+
+
+
             </div>
         </div>
     </div>
@@ -2720,10 +2359,529 @@ function showOperationResult(operation, success, customMessage = null) {
 
 
 
+        // ===================================================================== //
+        // CUARTA ENTREGA: GENERACIÓN DE RECIBOS Y REPORTES DE NÓMINA           //
+        // ===================================================================== //
+
+        // Variables globales para almacenar datos temporales
+        let reciboActual = null;
+        let reporteNominaActual = null;
+
+        // ============================================
+        // GENERACIÓN DE RECIBOS INDIVIDUALES
+        // ============================================
+
+        async function generarRecibo() {
+            const empleadoId = document.getElementById('recibo-empleado').value;
+            const periodo = document.getElementById('recibo-periodo').value;
+
+            if (!empleadoId || !periodo) {
+                showNotification('error', 'Error', 'Por favor seleccione un empleado y un período');
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_URL}/recibos/${empleadoId}/${periodo}`);
+                
+                if (response.ok) {
+                    reciboActual = await response.json();
+                    mostrarVistaPreviaRecibo(reciboActual);
+                    
+                    // Mostrar botones de acción
+                    document.getElementById('btn-imprimir-recibo').style.display = 'inline-block';
+                    document.getElementById('btn-descargar-recibo').style.display = 'inline-block';
+                    
+                } else {
+                    const error = await response.json();
+                    showNotification('error', 'Error', error.error);
+                }
+            } catch (error) {
+                showNotification('error', 'Error', 'Error al generar recibo');
+                console.error('Error:', error);
+            }
+        }
+
+        function mostrarVistaPreviaRecibo(recibo) {
+            const container = document.getElementById('contenido-recibo');
+            
+            const fecha = new Date();
+            const fechaEmision = fecha.toLocaleDateString('es-AR');
+            
+            let html = `
+                <div class="recibo-container">
+                    <div class="recibo-header">
+                        <div class="recibo-empresa">EMPRESA EJEMPLO S.A.</div>
+                        <div class="recibo-titulo">RECIBO DE SUELDO</div>
+                        <div>Razón Social: Empresa Ejemplo S.A. - CUIT: 30-12345678-9</div>
+                    </div>
+                    
+                    <div class="recibo-info">
+                        <div>
+                            <div class="recibo-info-item"><strong>Empleado:</strong> ${recibo.empleado.apellido}, ${recibo.empleado.nombre}</div>
+                            <div class="recibo-info-item"><strong>Legajo:</strong> ${recibo.empleado.legajo}</div>
+                            <div class="recibo-info-item"><strong>DNI:</strong> ${recibo.empleado.dni}</div>
+                        </div>
+                        <div>
+                            <div class="recibo-info-item"><strong>Período:</strong> ${recibo.periodo}</div>
+                            <div class="recibo-info-item"><strong>Fecha de Emisión:</strong> ${fechaEmision}</div>
+                            <div class="recibo-info-item"><strong>Convenio:</strong> ${recibo.empleado.convenio || 'No especificado'}</div>
+                        </div>
+                    </div>
+                    
+                    <table class="recibo-tabla">
+                        <thead>
+                            <tr>
+                                <th colspan="2" style="background: #667eea; color: white;">HABERES</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Salario Básico</td>
+                                <td style="text-align: right;">$${recibo.haberes.salario_base.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                            <tr>
+                                <td>Horas Extras</td>
+                                <td style="text-align: right;">$${recibo.haberes.horas_extras.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                            <tr>
+                                <td>Adicionales</td>
+                                <td style="text-align: right;">$${recibo.haberes.adicionales.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                            </tr>
+                            <tr class="recibo-total">
+                                <td><strong>TOTAL HABERES</strong></td>
+                                <td style="text-align: right;"><strong>$${recibo.haberes.total.toLocaleString('es-AR', {minimumFractionDigits: 2})}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <table class="recibo-tabla">
+                        <thead>
+                            <tr>
+                                <th colspan="2" style="background: #dc3545; color: white;">DESCUENTOS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+            `;
+            
+            recibo.descuentos.detalle.forEach(desc => {
+                html += `
+                    <tr>
+                        <td>${desc.concepto}</td>
+                        <td style="text-align: right;">$${desc.monto.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                            <tr class="recibo-total">
+                                <td><strong>TOTAL DESCUENTOS</strong></td>
+                                <td style="text-align: right;"><strong>$${recibo.descuentos.total.toLocaleString('es-AR', {minimumFractionDigits: 2})}</strong></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <div style="text-align: center; margin: 20px 0;">
+                        <div style="font-size: 18px; font-weight: bold; color: #28a745;">
+                            NETO A PAGAR: $${recibo.neto_a_pagar.toLocaleString('es-AR', {minimumFractionDigits: 2})}
+                        </div>
+                    </div>
+                    
+                    <div class="recibo-footer">
+                        <div>Recibo generado el ${fechaEmision} - Sistema de Liquidación de Sueldos</div>
+                        <div>Este es un documento no válido como comprobante oficial</div>
+                    </div>
+                </div>
+                
+                <div class="btn-group no-print">
+                    <button class="btn btn-success" onclick="imprimirRecibo()">🖨️ Imprimir Recibo</button>
+                    <button class="btn btn-excel" onclick="descargarReciboPDF()">📥 Descargar PDF</button>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+            document.getElementById('vista-previa-recibo').style.display = 'block';
+            
+            // Scroll a la vista previa
+            document.getElementById('vista-previa-recibo').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function imprimirRecibo() {
+            window.print();
+        }
 
 
+        // NUEVO: FUNCIÓN PARA EXPORTAR UN RECIBO DE SUELDOS A PDF
+        async function descargarReciboPDF() {
+            if (!reciboActual) {
+                showNotification('error', 'Error', 'No hay recibo para descargar');
+                return;
+            }
+
+            try {
+                // Verificar si las librerías están disponibles
+                if (typeof jsPDF === 'undefined' || typeof html2canvas === 'undefined') {
+                    showNotification('error', 'Error', 'Librerías PDF no disponibles. Usando impresión...');
+                    imprimirRecibo();
+                    return;
+                }
+
+                showNotification('info', 'Generando PDF', 'Creando documento PDF...');
+
+                // Capturar el contenido del recibo
+                const element = document.getElementById('contenido-recibo');
+                const canvas = await html2canvas(element, {
+                    scale: 2, // Mejor calidad
+                    useCORS: true,
+                    logging: false,
+                    backgroundColor: '#ffffff'
+                });
+
+                // Crear PDF
+                const pdf = new jsPDF.jsPDF('p', 'mm', 'a4');
+                const imgData = canvas.toDataURL('image/png');
+                
+                // Calcular dimensiones para que quepa en A4
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                
+                // Agregar imagen al PDF
+                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                
+                // Generar nombre del archivo
+                const fileName = `recibo_${reciboActual.empleado.legajo}_${reciboActual.periodo}.pdf`;
+                
+                // Descargar PDF
+                pdf.save(fileName);
+                
+                showNotification('success', 'PDF Descargado', 'Recibo guardado como: ' + fileName);
+                
+            } catch (error) {
+                console.error('Error generando PDF:', error);
+                showNotification('error', 'Error', 'No se pudo generar el PDF. Usando impresión...');
+                // Fallback a impresión
+                imprimirRecibo();
+            }
+        }
+
+        // ============================================
+        // REPORTES DE NÓMINA
+        // ============================================
+
+        function toggleSeleccionEmpleados() {
+            const tipoReporte = document.getElementById('tipo-reporte').value;
+            const selectorEmpleados = document.getElementById('selector-empleados');
+            
+            if (tipoReporte === 'seleccionados') {
+                selectorEmpleados.style.display = 'block';
+                cargarListaEmpleadosCheckbox();
+            } else {
+                selectorEmpleados.style.display = 'none';
+            }
+        }
+
+        async function cargarListaEmpleadosCheckbox() {
+            try {
+                const response = await fetch(`${API_URL}/empleados`);
+                const empleados = await response.json();
+                
+                const container = document.getElementById('lista-empleados-checkbox');
+                container.innerHTML = '';
+                
+                empleados.forEach(empleado => {
+                    const checkbox = document.createElement('div');
+                    checkbox.className = 'empleado-checkbox';
+                    checkbox.innerHTML = `
+                        <input type="checkbox" id="emp-${empleado.id}" value="${empleado.id}">
+                        <label for="emp-${empleado.id}">${empleado.legajo} - ${empleado.apellido}, ${empleado.nombre}</label>
+                    `;
+                    container.appendChild(checkbox);
+                });
+                
+            } catch (error) {
+                console.error('Error al cargar lista de empleados:', error);
+                showNotification('error', 'Error', 'No se pudieron cargar los empleados');
+            }
+        }
+
+        async function generarReporteNomina() {
+            const periodo = document.getElementById('nomina-periodo').value;
+            const tipoReporte = document.getElementById('tipo-reporte').value;
+
+            if (!periodo) {
+                showNotification('error', 'Error', 'Por favor seleccione un período');
+                return;
+            }
+
+            try {
+                let url = `${API_URL}/nomina/${periodo}`;
+                let options = { method: 'GET' };
+
+                if (tipoReporte === 'seleccionados') {
+                    const empleadosSeleccionados = obtenerEmpleadosSeleccionados();
+                    
+                    if (empleadosSeleccionados.length === 0) {
+                        showNotification('error', 'Error', 'Por favor seleccione al menos un empleado');
+                        return;
+                    }
+                    
+                    url = `${API_URL}/nomina/${periodo}/empleados`;
+                    options = {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ empleadosIds: empleadosSeleccionados })
+                    };
+                }
+
+                const response = await fetch(url, options);
+                
+                if (response.ok) {
+                    reporteNominaActual = await response.json();
+                    mostrarReporteNomina(reporteNominaActual);
+                    
+                    // Mostrar botón de exportación
+                    document.getElementById('btn-exportar-excel').style.display = 'inline-block';
+                    
+                } else {
+                    const error = await response.json();
+                    showNotification('error', 'Error', error.error);
+                }
+            } catch (error) {
+                showNotification('error', 'Error', 'Error al generar reporte de nómina');
+                console.error('Error:', error);
+            }
+        }
+
+        function obtenerEmpleadosSeleccionados() {
+            const checkboxes = document.querySelectorAll('#lista-empleados-checkbox input[type="checkbox"]:checked');
+            const empleadosIds = Array.from(checkboxes).map(checkbox => parseInt(checkbox.value));
+            return empleadosIds;
+        }
+
+        function mostrarReporteNomina(reporte) {
+            const container = document.getElementById('detalle-nomina');
+            
+            let html = `
+                <div class="reporte-resumen">
+                    <h4 style="color: white; margin: 0 0 10px 0;">Resumen de Nómina</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                        <div>
+                            <strong>Período:</strong><br>
+                            ${reporte.periodo}
+                        </div>
+                        <div>
+                            <strong>Total Empleados:</strong><br>
+                            ${reporte.total_empleados}
+                        </div>
+                        <div>
+                            <strong>Total Nómina:</strong><br>
+                            $${reporte.total_nomina.toLocaleString('es-AR', {minimumFractionDigits: 2})}
+                        </div>
+                    </div>
+                </div>
+                
+                <table class="recibo-tabla">
+                    <thead>
+                        <tr>
+                            <th>Legajo</th>
+                            <th>Empleado</th>
+                            <th>DNI</th>
+                            <th>Salario Base</th>
+                            <th>Horas Extras</th>
+                            <th>Adicionales</th>
+                            <th>Total Haberes</th>
+                            <th>Total Descuentos</th>
+                            <th>Neto a Pagar</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+            
+            reporte.empleados.forEach(emp => {
+                html += `
+                    <tr>
+                        <td>${emp.legajo}</td>
+                        <td>${emp.nombre}</td>
+                        <td>${emp.dni}</td>
+                        <td style="text-align: right;">$${emp.salario_base.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                        <td style="text-align: right;">$${emp.horas_extras.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                        <td style="text-align: right;">$${emp.adicionales.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                        <td style="text-align: right;">$${emp.total_haberes.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                        <td style="text-align: right;">$${emp.total_descuentos.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                        <td style="text-align: right; font-weight: bold;">$${emp.neto_a_pagar.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                    </tr>
+                `;
+            });
+            
+            html += `
+                    </tbody>
+                    <tfoot>
+                        <tr style="background: #f8f9fa; font-weight: bold;">
+                            <td colspan="6" style="text-align: right;">TOTAL NÓMINA:</td>
+                            <td style="text-align: right;">$${reporte.empleados.reduce((sum, emp) => sum + emp.total_haberes, 0).toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                            <td style="text-align: right;">$${reporte.empleados.reduce((sum, emp) => sum + emp.total_descuentos, 0).toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                            <td style="text-align: right;">$${reporte.total_nomina.toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+                
+                <div class="btn-group no-print">
+                    <button class="btn btn-excel" onclick="exportarExcel()">📊 Exportar a Excel</button>
+                </div>
+            `;
+            
+            container.innerHTML = html;
+            document.getElementById('resultado-nomina').style.display = 'block';
+            
+            // Scroll al resultado
+            document.getElementById('resultado-nomina').scrollIntoView({ behavior: 'smooth' });
+        }
 
 
+        // NUEVO: EXPORTAR INFORME DE NOMINA A EXCEL
+        function exportarExcel() {
+            if (!reporteNominaActual) {
+                showNotification('error', 'Error', 'No hay reporte para exportar');
+                return;
+            }
+
+            try {
+                // Verificar si la librería está disponible
+                if (typeof XLSX === 'undefined') {
+                    showNotification('error', 'Error', 'Librería Excel no disponible');
+                    return;
+                }
+
+                showNotification('info', 'Generando Excel', 'Creando archivo Excel...');
+
+                // Crear libro de Excel
+                const wb = XLSX.utils.book_new();
+                
+                // Preparar datos para la hoja principal
+                const datos = reporteNominaActual.empleados.map(emp => ({
+                    'Legajo': emp.legajo,
+                    'Empleado': emp.nombre,
+                    'DNI': emp.dni,
+                    'Salario Base': emp.salario_base,
+                    'Horas Extras': emp.horas_extras,
+                    'Adicionales': emp.adicionales,
+                    'Total Haberes': emp.total_haberes,
+                    'Total Descuentos': emp.total_descuentos,
+                    'Neto a Pagar': emp.neto_a_pagar
+                }));
+
+                // Agregar fila de totales
+                datos.push({
+                    'Legajo': 'TOTAL',
+                    'Empleado': '',
+                    'DNI': '',
+                    'Salario Base': reporteNominaActual.empleados.reduce((sum, emp) => sum + emp.salario_base, 0),
+                    'Horas Extras': reporteNominaActual.empleados.reduce((sum, emp) => sum + emp.horas_extras, 0),
+                    'Adicionales': reporteNominaActual.empleados.reduce((sum, emp) => sum + emp.adicionales, 0),
+                    'Total Haberes': reporteNominaActual.empleados.reduce((sum, emp) => sum + emp.total_haberes, 0),
+                    'Total Descuentos': reporteNominaActual.empleados.reduce((sum, emp) => sum + emp.total_descuentos, 0),
+                    'Neto a Pagar': reporteNominaActual.total_nomina
+                });
+
+                // Crear hoja de datos
+                const ws = XLSX.utils.json_to_sheet(datos, { skipHeader: false });
+                
+                // Agregar estilo a los encabezados
+                if (!ws['!cols']) ws['!cols'] = [];
+                ws['!cols'] = [
+                    { wch: 10 }, // Legajo
+                    { wch: 25 }, // Empleado
+                    { wch: 12 }, // DNI
+                    { wch: 12 }, // Salario Base
+                    { wch: 12 }, // Horas Extras
+                    { wch: 12 }, // Adicionales
+                    { wch: 12 }, // Total Haberes
+                    { wch: 12 }, // Total Descuentos
+                    { wch: 12 }  // Neto a Pagar
+                ];
+                
+                // Agregar hoja al libro
+                XLSX.utils.book_append_sheet(wb, ws, `Nomina_${reporteNominaActual.periodo}`);
+                
+                // Crear hoja de resumen
+                const resumenData = [
+                    ['RESUMEN DE NÓMINA'],
+                    [''],
+                    ['Período:', reporteNominaActual.periodo],
+                    ['Total Empleados:', reporteNominaActual.total_empleados],
+                    ['Total Nómina:', reporteNominaActual.total_nomina],
+                    [''],
+                    ['Fecha de Generación:', new Date().toLocaleDateString('es-AR')]
+                ];
+                
+                const wsResumen = XLSX.utils.aoa_to_sheet(resumenData);
+                XLSX.utils.book_append_sheet(wb, wsResumen, 'Resumen');
+                
+                // Generar nombre del archivo
+                const fileName = `nomina_${reporteNominaActual.periodo}.xlsx`;
+                
+                // Descargar archivo
+                XLSX.writeFile(wb, fileName);
+                
+                showNotification('success', 'Excel Exportado', 'Reporte guardado como: ' + fileName);
+                
+            } catch (error) {
+                console.error('Error exportando Excel:', error);
+                showNotification('error', 'Error', 'No se pudo exportar a Excel');
+            }
+        }
+
+        // ============================================
+        // INICIALIZACIÓN DE LA SECCIÓN DE REPORTES
+        // ============================================
+
+        function inicializarSeccionReportes() {
+            // Cargar empleados en el selector de recibos
+            cargarEmpleadosParaRecibos();
+            
+            // Establecer período actual por defecto
+            const hoy = new Date();
+            const periodo = hoy.toISOString().substring(0, 7);
+            document.getElementById('recibo-periodo').value = periodo;
+            document.getElementById('nomina-periodo').value = periodo;
+        }
+
+        async function cargarEmpleadosParaRecibos() {
+            try {
+                const response = await fetch(`${API_URL}/empleados`);
+                const empleados = await response.json();
+                
+                const selectRecibo = document.getElementById('recibo-empleado');
+                selectRecibo.innerHTML = '<option value="">Seleccionar empleado...</option>';
+                
+                empleados.forEach(e => {
+                    selectRecibo.innerHTML += `<option value="${e.id}">${e.legajo} - ${e.apellido}, ${e.nombre}</option>`;
+                });
+                
+            } catch (error) {
+                console.error('Error al cargar empleados para recibos:', error);
+            }
+        }
+
+        // Actualizar la inicialización para incluir reportes
+        window.addEventListener('DOMContentLoaded', function() {
+            verificarConexion();
+            cargarConvenios();
+            cargarHorasExtras();
+            cargarFeriados();
+            cargarAdicionales();
+            cargarDescuentos();
+            cargarVacaciones();
+            cargarLicencias();
+            cargarDatosAsociaciones();
+            cargarEmpleados();
+            cargarDatosFormularios();
+            inicializarSeccionReportes();
+            
+            // Establecer período actual por defecto en liquidaciones
+            const hoy = new Date();
+            const periodo = hoy.toISOString().substring(0, 7);
+            document.getElementById('liquidacion-periodo').value = periodo;
+        });
 
 
     </script>
