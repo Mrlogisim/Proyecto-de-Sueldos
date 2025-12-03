@@ -905,47 +905,49 @@ function showOperationResult(operation, success, customMessage = null) {
         // ============================================
         
         async function cargarConvenios() {
-            const container = document.getElementById('convenios-list');
-            container.innerHTML = '<div class="loading">Cargando convenios...</div>';
+        const container = document.getElementById('convenios-list');
+        container.innerHTML = '<div class="loading">Cargando convenios...</div>';
 
-            try {
-                const response = await fetch(`${API_URL}/convenios`);
-                const convenios = await response.json();
+        try {
+            const response = await fetch(`${API_URL}/convenios`);
+            const convenios = await response.json();
 
-                if (convenios.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><p>No hay convenios registrados</p></div>';
-                    return;
-                }
-
-                let html = '<table><thead><tr><th>Nombre</th><th>Número</th><th>Salario Básico</th><th>Aportes Totales</th><th>Acciones</th></tr></thead><tbody>';
-                
-                convenios.forEach(c => {
-                    const aportesTotales = parseFloat(c.aporte_jubilacion) + parseFloat(c.aporte_obra_social) + 
-                                          parseFloat(c.aporte_sindical) + parseFloat(c.aporte_pami);
-                    html += `
-                        <tr>
-                            <td><strong>${c.nombre}</strong></td>
-                            <td>${c.numero}</td>
-                            <td>$${parseFloat(c.salario_basico).toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
-                            <td>${aportesTotales.toFixed(2)}%</td>
-                            <td>
-                                <button class="btn btn-edit" onclick="editarConvenio(${c.id})">Editar</button>
-                                <button class="btn btn-danger" style="padding: 8px 16px; font-size: 12px;" onclick="eliminarConvenio(${c.id})">Eliminar</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-                
-                html += '</tbody></table>';
-                container.innerHTML = html;
-                showOperationResult('load', true, 'Convenios cargados correctamente');
-            } catch (error) {
-                
-                showOperationResult('load', false, 'Error al cargar convenios');
-
+            if (convenios.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No hay convenios registrados</p></div>';
+                return;
             }
+
+            let html = '<table><thead><tr><th>Nombre</th><th>Número</th><th>Salario Básico</th><th>Aportes Totales</th><th>Acciones</th></tr></thead><tbody>';
+            
+            convenios.forEach(c => {
+                const aportesTotales = parseFloat(c.aporte_jubilacion) + parseFloat(c.aporte_obra_social) + 
+                                    parseFloat(c.aporte_sindical) + parseFloat(c.aporte_pami);
+                html += `
+                    <tr>
+                        <td><strong>${c.nombre}</strong></td>
+                        <td>${c.numero}</td>
+                        <td>$${parseFloat(c.salario_basico).toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                        <td>${aportesTotales.toFixed(2)}%</td>
+                        <td>
+                            <button class="btn btn-edit" onclick="editarConvenio(${c.id})">Editar</button>
+                            <button class="btn btn-danger" style="padding: 8px 16px; font-size: 12px;" onclick="eliminarConvenio(${c.id})">Eliminar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+            // SOLO UNA VEZ aquí ↓
             showOperationResult('load', true, 'Convenios cargados correctamente');
+        } catch (error) {
+            container.innerHTML = '<div class="alert alert-error">Error al cargar convenios</div>';
+            console.error('Error:', error);
+            showOperationResult('load', false, 'Error al cargar convenios');
         }
+        // ELIMINAR ESTA LÍNEA DUPLICADA ↓
+        // showOperationResult('load', true, 'Convenios cargados correctamente');
+    }
 
         document.getElementById('convenio-form').addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -1891,45 +1893,46 @@ function showOperationResult(operation, success, customMessage = null) {
 // ============================================
 
         async function cargarEmpleados() {
-            const container = document.getElementById('empleados-list');
-            container.innerHTML = '<div class="loading">Cargando empleados...</div>';
+        const container = document.getElementById('empleados-list');
+        container.innerHTML = '<div class="loading">Cargando empleados...</div>';
 
-            try {
-                const response = await fetch(`${API_URL}/empleados`);
-                const empleados = await response.json();
+        try {
+            const response = await fetch(`${API_URL}/empleados`);
+            const empleados = await response.json();
 
-                if (empleados.length === 0) {
-                    container.innerHTML = '<div class="empty-state"><p>No hay empleados registrados</p></div>';
-                    return;
-                }
-
-                let html = '<table><thead><tr><th>Legajo</th><th>Nombre</th><th>DNI</th><th>Salario Base</th><th>Convenio</th><th>Acciones</th></tr></thead><tbody>';
-                
-                empleados.forEach(e => {
-                    html += `
-                        <tr>
-                            <td><strong>${e.legajo}</strong></td>
-                            <td>${e.apellido}, ${e.nombre}</td>
-                            <td>${e.dni}</td>
-                            <td>$${parseFloat(e.salario_base).toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
-                            <td>${e.convenio_nombre || 'Sin convenio'}</td>
-                            <td>
-                                <button class="btn btn-edit" onclick="editarEmpleado(${e.id})">Editar</button>
-                                <button class="btn btn-danger" style="padding: 8px 16px; font-size: 12px;" onclick="eliminarEmpleado(${e.id})">Eliminar</button>
-                            </td>
-                        </tr>
-                    `;
-                });
-                
-                html += '</tbody></table>';
-                container.innerHTML = html;
-                showOperationResult('load', true, 'Empleados cargados correctamente');
-            } catch (error) {
-                container.innerHTML = '<div class="alert alert-error">Error al cargar empleados</div>';
-                console.error('Error:', error);
-                showOperationResult('load', false, 'Error al cargar empleados');
+            if (empleados.length === 0) {
+                container.innerHTML = '<div class="empty-state"><p>No hay empleados registrados</p></div>';
+                return;
             }
+
+            let html = '<table><thead><tr><th>Legajo</th><th>Nombre</th><th>DNI</th><th>Salario Base</th><th>Convenio</th><th>Acciones</th></tr></thead><tbody>';
+            
+            empleados.forEach(e => {
+                html += `
+                    <tr>
+                        <td><strong>${e.legajo}</strong></td>
+                        <td>${e.apellido}, ${e.nombre}</td>
+                        <td>${e.dni}</td>
+                        <td>$${parseFloat(e.salario_base).toLocaleString('es-AR', {minimumFractionDigits: 2})}</td>
+                        <td>${e.convenio_nombre || 'Sin convenio'}</td>
+                        <td>
+                            <button class="btn btn-edit" onclick="editarEmpleado(${e.id})">Editar</button>
+                            <button class="btn btn-danger" style="padding: 8px 16px; font-size: 12px;" onclick="eliminarEmpleado(${e.id})">Eliminar</button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+            // SOLO UNA VEZ aquí ↓
+            showOperationResult('load', true, 'Empleados cargados correctamente');
+        } catch (error) {
+            container.innerHTML = '<div class="alert alert-error">Error al cargar empleados</div>';
+            console.error('Error:', error);
+            showOperationResult('load', false, 'Error al cargar empleados');
         }
+    }
 
         async function cargarDatosFormularios() {
             try {
@@ -2337,25 +2340,50 @@ function showOperationResult(operation, success, customMessage = null) {
             }
         }
 
-        // Actualizar la inicialización
+        // Reemplaza la función de inicialización actual con esta versión optimizada:
         window.addEventListener('DOMContentLoaded', function() {
+            // Mostrar solo una notificación de conexión
             verificarConexion();
-            cargarConvenios();
-            cargarHorasExtras();
-            cargarFeriados();
-            cargarAdicionales();
-            cargarDescuentos();
-            cargarVacaciones();
-            cargarLicencias();
-            cargarDatosAsociaciones();
-            cargarEmpleados();
-            cargarDatosFormularios();
+            
+            // Cargar todos los datos sin notificaciones individuales
+            cargarTodosLosDatos();
             
             // Establecer período actual por defecto
             const hoy = new Date();
             const periodo = hoy.toISOString().substring(0, 7);
             document.getElementById('liquidacion-periodo').value = periodo;
+            document.getElementById('recibo-periodo').value = periodo;
+            document.getElementById('nomina-periodo').value = periodo;
         });
+
+        // Nueva función para cargar todo de manera controlada
+        async function cargarTodosLosDatos() {
+            try {
+                // Cargar datos sin mostrar notificaciones para cada uno
+                await Promise.all([
+                    cargarConvenios(),
+                    cargarHorasExtras(),
+                    cargarFeriados(),
+                    cargarAdicionales(),
+                    cargarDescuentos(),
+                    cargarVacaciones(),
+                    cargarLicencias(),
+                    cargarEmpleados()
+                ]);
+                
+                // Luego cargar los datos de formularios y asociaciones
+                await cargarDatosAsociaciones();
+                await cargarDatosFormularios();
+                inicializarSeccionReportes();
+                
+                // Mostrar una sola notificación de éxito
+                showNotification('success', 'Sistema Cargado', 'Todos los datos se cargaron correctamente');
+                
+            } catch (error) {
+                console.error('Error al cargar datos:', error);
+                showNotification('error', 'Error de Carga', 'Algunos datos no pudieron cargarse');
+            }
+        }
 
 
 
@@ -2511,57 +2539,119 @@ function showOperationResult(operation, success, customMessage = null) {
 
 
         // NUEVO: FUNCIÓN PARA EXPORTAR UN RECIBO DE SUELDOS A PDF
+
         async function descargarReciboPDF() {
-            if (!reciboActual) {
-                showNotification('error', 'Error', 'No hay recibo para descargar');
-                return;
-            }
-
-            try {
-                // Verificar si las librerías están disponibles
-                if (typeof jsPDF === 'undefined' || typeof html2canvas === 'undefined') {
-                    showNotification('error', 'Error', 'Librerías PDF no disponibles. Usando impresión...');
-                    imprimirRecibo();
-                    return;
-                }
-
-                showNotification('info', 'Generando PDF', 'Creando documento PDF...');
-
-                // Capturar el contenido del recibo
-                const element = document.getElementById('contenido-recibo');
-                const canvas = await html2canvas(element, {
-                    scale: 2, // Mejor calidad
-                    useCORS: true,
-                    logging: false,
-                    backgroundColor: '#ffffff'
-                });
-
-                // Crear PDF
-                const pdf = new jsPDF.jsPDF('p', 'mm', 'a4');
-                const imgData = canvas.toDataURL('image/png');
-                
-                // Calcular dimensiones para que quepa en A4
-                const pdfWidth = pdf.internal.pageSize.getWidth();
-                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-                
-                // Agregar imagen al PDF
-                pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-                
-                // Generar nombre del archivo
-                const fileName = `recibo_${reciboActual.empleado.legajo}_${reciboActual.periodo}.pdf`;
-                
-                // Descargar PDF
-                pdf.save(fileName);
-                
-                showNotification('success', 'PDF Descargado', 'Recibo guardado como: ' + fileName);
-                
-            } catch (error) {
-                console.error('Error generando PDF:', error);
-                showNotification('error', 'Error', 'No se pudo generar el PDF. Usando impresión...');
-                // Fallback a impresión
-                imprimirRecibo();
-            }
+        if (!reciboActual) {
+            showNotification('error', 'Error', 'No hay recibo para descargar');
+            return;
         }
+
+        const empleadoId = document.getElementById('recibo-empleado').value;
+        const periodo = document.getElementById('recibo-periodo').value;
+
+        if (!empleadoId || !periodo) {
+            showNotification('error', 'Error', 'Faltan datos para generar el PDF');
+            return;
+        }
+
+        try {
+            showNotification('info', 'Generando PDF', 'Creando documento PDF...');
+
+            // Usar el nuevo endpoint del backend con PDFKit
+            const pdfUrl = `${API_URL}/recibos/${empleadoId}/${periodo}/pdf`;
+            
+            // Opción 1: Descarga directa (simple)
+            window.open(pdfUrl, '_blank');
+            
+            // Opción 2: Con fetch para más control
+            /*
+            const response = await fetch(pdfUrl);
+            if (!response.ok) {
+                throw new Error('Error al generar PDF');
+            }
+            
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `recibo_${reciboActual.empleado.legajo}_${periodo}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            */
+            
+            showNotification('success', 'PDF Generado', 'El recibo se está descargando...');
+            
+        } catch (error) {
+            console.error('Error generando PDF:', error);
+            showNotification('error', 'Error', 'No se pudo generar el PDF. Verifica el servidor.');
+            
+            // Fallback al método anterior con jsPDF
+            descargarReciboPDF_Fallback();
+        }
+    }
+
+    // Función de fallback con jsPDF (mantener por si acaso)
+    function descargarReciboPDF_Fallback() {
+        // Tu código actual con jsPDF + html2canvas
+        // ... mantenerlo como respaldo ...
+    }
+
+
+
+
+        // async function descargarReciboPDF_Fallback() {
+        //     if (!reciboActual) {
+        //         showNotification('error', 'Error', 'No hay recibo para descargar');
+        //         return;
+        //     }
+
+        //     try {
+        //         // Verificar si las librerías están disponibles
+        //         if (typeof jsPDF === 'undefined' || typeof html2canvas === 'undefined') {
+        //             showNotification('error', 'Error', 'Librerías PDF no disponibles. Usando impresión...');
+        //             imprimirRecibo();
+        //             return;
+        //         }
+
+        //         showNotification('info', 'Generando PDF', 'Creando documento PDF...');
+
+        //         // Capturar el contenido del recibo
+        //         const element = document.getElementById('contenido-recibo');
+        //         const canvas = await html2canvas(element, {
+        //             scale: 2, // Mejor calidad
+        //             useCORS: true,
+        //             logging: false,
+        //             backgroundColor: '#ffffff'
+        //         });
+
+        //         // Crear PDF
+        //         const pdf = new jsPDF.jsPDF('p', 'mm', 'a4');
+        //         const imgData = canvas.toDataURL('image/png');
+                
+        //         // Calcular dimensiones para que quepa en A4
+        //         const pdfWidth = pdf.internal.pageSize.getWidth();
+        //         const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                
+        //         // Agregar imagen al PDF
+        //         pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+                
+        //         // Generar nombre del archivo
+        //         const fileName = `recibo_${reciboActual.empleado.legajo}_${reciboActual.periodo}.pdf`;
+                
+        //         // Descargar PDF
+        //         pdf.save(fileName);
+                
+        //         showNotification('success', 'PDF Descargado', 'Recibo guardado como: ' + fileName);
+                
+        //     } catch (error) {
+        //         console.error('Error generando PDF:', error);
+        //         showNotification('error', 'Error', 'No se pudo generar el PDF. Usando impresión...');
+        //         // Fallback a impresión
+        //         imprimirRecibo();
+        //     }
+        // }
 
         // ============================================
         // REPORTES DE NÓMINA

@@ -8,6 +8,9 @@ const { Pool } = require('pg');
 const path = require('path'); // IMPORTANTE: Necesario para manejar rutas de carpetas
 require('dotenv').config();
 
+// ← AGREGAR ESTA LÍNEA ↓
+const PDFService = require('./services/pdfService');
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -1413,6 +1416,82 @@ app.post('/api/nomina/:periodo/empleados', async (req, res) => {
     } catch (err) {
         console.error('Error:', err);
         res.status(500).json({ error: 'Error al generar reporte de nómina: ' + err.message });
+    }
+});
+
+
+
+
+
+
+
+// ============================================
+// RUTAS - GENERACIÓN DE PDFs CON PDFKIT
+// ============================================
+
+// Ruta para generar recibo en PDF
+
+app.get('/api/recibos/:empleadoId/:periodo/pdf', async (req, res) => {
+    try {
+        const { empleadoId, periodo } = req.params;
+        
+        console.log(`📄 Generando PDF para empleado ${empleadoId}, período ${periodo}`);
+        
+        // 1. Obtener datos del recibo desde tu función existente
+        const reciboResponse = await calcularLiquidacion(empleadoId, periodo);
+        
+        // 2. Obtener datos del empleado
+        const empleadoResult = await pool.query(
+            `SELECT e.*, c.nombre as convenio_nombre 
+             FROM empleados e 
+             LEFT JOIN convenios c ON e.convenio_id = c.id 
+             WHERE e.id = $1`,
+            [empleadoId]
+        );
+        
+        if (empleadoResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Empleado no encontrado' });
+        }
+        
+        const empleado = empleadoResult.rows[0];
+        
+        // 3. Preparar datos para el PDF
+        const reciboData = {
+            empleado: {
+                nombre: empleado.nombre,
+                apellido: empleado.apellido,
+                legajo: empleado.legajo,
+                dni: empleado.dni,
+                fecha_ingreso: empleado.fecha_ingreso,
+                convenio: empleado.convenio_nombre,
+                categoria: empleado.categoria || 'Empleado'
+            },
+            periodo: periodo,
+            numero_liquidacion: `LIQ-${periodo.replace('-', '')}-${empleado.legajo}`,
+            haberes: reciboResponse.haberes,
+            descuentos: reciboResponse.descuentos,
+            neto_a_pagar: reciboResponse.neto_a_pagar,
+            aporte_sindical: 2 // Puedes obtener esto del convenio
+        };
+        
+        // 4. Generar PDF
+        const pdfBuffer = await PDFService.generarReciboPDF(reciboData);
+        
+        // 5. Configurar respuesta
+        res.setHeader('Content-Type', 'application/pdf');
+        res.setHeader('Content-Disposition', 
+            `attachment; filename="recibo_${reciboData.empleado.legajo}_${periodo.replace('-', '_')}.pdf"`);
+        res.setHeader('Content-Length', pdfBuffer.length);
+        
+        // 6. Enviar PDF
+        res.send(pdfBuffer);
+        
+    } catch (error) {
+        console.error('❌ Error generando PDF:', error);
+        res.status(500).json({ 
+            error: 'Error al generar PDF', 
+            details: error.message 
+        });
     }
 });
 
